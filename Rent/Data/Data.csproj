@@ -8,7 +8,6 @@
 
     <ItemGroup>
       <Folder Include="AppContexts\" />
-      <Folder Include="Dtos\" />
       <Folder Include="Models\" />
     </ItemGroup>
 
@@ -20,6 +19,10 @@
       </PackageReference>
       <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.6" />
       <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Utility\Utility.csproj" />
     </ItemGroup>
 
 </Project>
