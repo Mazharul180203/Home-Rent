@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using Data.DBContexts;
+using Data.Dtos;
 using Data.Models;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Services.Interfaces;
 
@@ -20,13 +22,27 @@ public class AuthController : ControllerBase
     }
 
 
-    [HttpGet("create/register")]
+    [HttpPost("auth/Register")]
 
     public async Task<ActionResult> CreateRegister(Register data)
     {
         try
         {
             return await getResponse(await _service.AddCreateRequest(data));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Status = "Error", Message = ex.Message });
+        }
+    }
+
+    [HttpPost("auth/DoLogin")]
+
+    public async Task<ActionResult> DoLogin(LoginDto data)
+    {
+        try
+        {
+            return await getResponse(await _service.DoLoginRequest(data));
         }
         catch (Exception ex)
         {
