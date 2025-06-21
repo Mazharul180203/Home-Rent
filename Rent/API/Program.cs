@@ -9,7 +9,8 @@ using Services.Interfaces;
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<AppDBContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
+        b=>b.MigrationsAssembly("Data")));
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddHttpClient();
@@ -18,7 +19,7 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
     {
-        Title = "IDLCFinanceAPI",
+        Title = "RentAPI",
         Version = "v1",
         Description = "API documentation",
         TermsOfService = new Uri("https://example.com/terms"),
