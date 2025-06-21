@@ -24,7 +24,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("auth/Register")]
 
-    public async Task<ActionResult> CreateRegister(Register data)
+    public async Task<ActionResult> CreateRegister(UserRegistrationDto data)
     {
         try
         {
@@ -42,7 +42,10 @@ public class AuthController : ControllerBase
     {
         try
         {
-            return await getResponse(await _service.DoLoginRequest(data));
+            var response = await _service.DoLoginRequest(data);
+            return response == "Invalid credentials" ? 
+                await getResponse(response,"Invalid credentials") 
+                : await getResponse(response, "Login successful");
         }
         catch (Exception ex)
         {

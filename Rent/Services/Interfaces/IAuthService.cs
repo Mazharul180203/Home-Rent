@@ -5,6 +5,6 @@ namespace Services.Interfaces;
 
 public interface IAuthService
 {
-    public Task<object> AddCreateRequest(Register data);
+    public Task<object> AddCreateRequest(UserRegistrationDto data);
     public Task<object> DoLoginRequest(LoginDto data);
 }

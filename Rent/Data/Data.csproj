@@ -8,6 +8,8 @@
 
     <ItemGroup>
       <Folder Include="AppContexts\" />
+      <Folder Include="DBContexts\" />
+      <Folder Include="Models\" />
     </ItemGroup>
 
     <ItemGroup>

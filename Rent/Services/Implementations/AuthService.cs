@@ -22,26 +22,27 @@ public class AuthService : IAuthService
         _configuration = configuration;
     }
 
-    public async Task<object> AddCreateRequest(Register data)
+    public async Task<object> AddCreateRequest(UserRegistrationDto data)
     {
         try
         {
-            if (await _context.Registers.AnyAsync(u => u.Email == data.Email))
+            if (await _context.Users.AnyAsync(u => u.Email == data.Email))
                 return "user already exists";
 
-            var userRegister = new Register
+            var userRegister = new User()
             {
-                Username = data.Username,
+                UserName = data.UserName,
+                FirstName = data.FirstName,
+                LastName = data.LastName,
                 Email = data.Email,
                 Phone = data.Phone,
-                Password_Hash = BCrypt.Net.BCrypt.HashPassword(data.Password_Hash),
-                Role = data.Role ?? "user",
-                Is_Active = true,
-                Created_At = DateTime.Now,
-                Updated_At = DateTime.Now
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(data.PasswordHash),
+                UserType = data.UserType ?? "user",
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
             };
 
-            await _context.Registers.AddAsync(userRegister);
+            await _context.Users.AddAsync(userRegister);
             await _context.SaveChangesAsync();
 
             return "user created successfully";
@@ -60,23 +61,23 @@ public class AuthService : IAuthService
            bool isPhone = System.Text.RegularExpressions.Regex.IsMatch(data.UserName, @"^\+?\d{10,15}$");
 
            var userDetails = isPhone
-               ? await _context.Registers.AsNoTracking().FirstOrDefaultAsync(u => u.Phone == data.UserName)
+               ? await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Phone == data.UserName)
                : isEmail
-                   ? await _context.Registers.AsNoTracking().FirstOrDefaultAsync(u => u.Email == data.UserName)
+                   ? await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Email == data.UserName)
                    : null;
            
-           if (userDetails == null || !BCrypt.Net.BCrypt.Verify(data.Password, userDetails.Password_Hash))
+           if (userDetails == null || !BCrypt.Net.BCrypt.Verify(data.Password, userDetails.PasswordHash))
            {
                return "Invalid credentials";
            }
            
-           await _context.LoginUsers.AddAsync(new LoginUser { UserName = userDetails.Username, entryTime = DateTime.Now });
+           await _context.LoginUsers.AddAsync(new LoginUser { UserName = userDetails.UserName, entryTime = DateTime.Now });
            await _context.SaveChangesAsync();
            List<LoginUserDto> loginUser = new List<LoginUserDto>();
            
            loginUser.Add(new LoginUserDto
            {
-               userName = userDetails.Username,
+               userName = userDetails.UserName,
                createdAt = DateTime.Now,
            });
            return new
