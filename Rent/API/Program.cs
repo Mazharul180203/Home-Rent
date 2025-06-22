@@ -12,6 +12,7 @@ builder.Services.AddDbContext<AppDBContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
         b=>b.MigrationsAssembly("Data")));
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IMapService, MapService>();
 
 builder.Services.AddHttpClient();
 

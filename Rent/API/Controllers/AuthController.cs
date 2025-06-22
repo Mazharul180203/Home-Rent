@@ -22,7 +22,7 @@ public class AuthController : ControllerBase
     }
 
 
-    [HttpPost("auth/Register")]
+    [HttpPost("Auth/Register")]
 
     public async Task<ActionResult> CreateRegister(UserRegistrationDto data)
     {
@@ -36,7 +36,7 @@ public class AuthController : ControllerBase
         }
     }
 
-    [HttpPost("auth/DoLogin")]
+    [HttpPost("Auth/DoLogin")]
 
     public async Task<ActionResult> DoLogin(LoginDto data)
     {
