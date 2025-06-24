@@ -108,6 +108,7 @@ public class MapService : IMapService
     private async Task<DistanceTimeDto> GetDistanceDirection(double[] origin, double[] destination)
     {
         var OpenRoutesServiceKey =  _configuration["OpenRoutesServiceKey"];
+        
         if (origin == null || destination == null || origin.Length != 2 || destination.Length != 2)
         {
             throw new ArgumentException("Origin and destination must be arrays of [longitude, latitude]");
@@ -116,11 +117,11 @@ public class MapService : IMapService
         {
             throw new ArgumentException("Coordinates must be valid numbers");
         }
-        if (origin[0] < -180 || origin[0] > 180 || origin[1] < -90 || origin[1] > 90 ||
-           destination[0] < -180 || destination[0] > 180 || destination[1] < -90 || destination[1] > 90)
-        {
-            throw new ArgumentException("Coordinates out of valid range: longitude [-180, 180], latitude [-90, 90]");
-        }
+        // if (origin[0] < -180 || origin[0] > 180 || origin[1] < -90 || origin[1] > 90 ||
+        //    destination[0] < -180 || destination[0] > 180 || destination[1] < -90 || destination[1] > 90)
+        // {
+        //     throw new ArgumentException("Coordinates out of valid range: longitude [-180, 180], latitude [-90, 90]");
+        // }
         
         try
         {
@@ -135,20 +136,22 @@ public class MapService : IMapService
 
             var json = await response.Content.ReadAsStringAsync();
             using var document = JsonDocument.Parse(json);
-
             var root = document.RootElement;
-            if (root.TryGetProperty("routes", out var routes) && 
-                routes.GetArrayLength() > 0)
+            if (root.TryGetProperty("features", out var features) && features.GetArrayLength() > 0)
             {
-                var route = routes[0];
-                var distance = route.GetProperty("summary").GetProperty("distance").GetDouble() / 1000; // Convert to km
-                var duration = route.GetProperty("summary").GetProperty("duration").GetDouble() / 60; // Convert to minutes
-
-                return new DistanceTimeDto
+                var feature = features[0];
+                if (feature.TryGetProperty("properties", out var properties) &&
+                    properties.TryGetProperty("summary", out var summary))
                 {
-                    DistanceKm = distance,
-                    EstimatedTimeMinutes = duration
-                };
+                    var distance = summary.GetProperty("distance").GetDouble() / 1000; // Convert to km
+                    var duration = summary.GetProperty("duration").GetDouble() / 60; // Convert to minutes
+
+                    return new DistanceTimeDto
+                    {
+                        DistanceKm = distance,
+                        EstimatedTimeMinutes = duration
+                    };
+                }
             }
 
             throw new Exception("No route found between the given coordinates.");
