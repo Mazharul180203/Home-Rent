@@ -24,7 +24,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("Auth/Register")]
 
-    public async Task<ActionResult> CreateRegister(UserRegistrationDto data)
+    public async Task<IActionResult> CreateRegister(UserRegistrationDto data)
     {
         try
         {
@@ -38,7 +38,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("Auth/DoLogin")]
 
-    public async Task<ActionResult> DoLogin(LoginDto data)
+    public async Task<IActionResult> DoLogin(LoginDto data)
     {
         try
         {

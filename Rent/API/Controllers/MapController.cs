@@ -17,13 +17,28 @@ public class MapController : ControllerBase
         _service = service;
     }
     
-    [HttpGet("Map/GetCoordinates")]
+    [HttpGet("get/coordinates")]
     public async Task<ActionResult> GetCoordinates([FromQuery] string address)
     {
         try
         {
             var coordinates = await _service.GetCoordinate(address);
             return await getResponse(coordinates, "Coordinates retrieved successfully");
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Status = "Error", Message = ex.Message });
+        }
+    }
+    
+    [HttpGet("get/distace/time")]
+    
+    public async Task<ActionResult> GetDistanceAndTime([FromQuery] string origin, [FromQuery] string destination)
+    {
+        try
+        {
+            var result = await _service.GetDistanceAndTime(origin, destination);
+            return await getResponse(result, "Distance and time retrieved successfully");
         }
         catch (Exception ex)
         {
