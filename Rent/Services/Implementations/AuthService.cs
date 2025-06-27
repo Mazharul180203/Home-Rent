@@ -71,6 +71,11 @@ public class AuthService : IAuthService
                return "Invalid credentials";
            }
            
+           var id = await _context.Users
+               .Where(u => u.Email.ToLower() == data.UserName.ToLower() || u.Phone == data.UserName)
+               .Select(u => u.Id)
+               .FirstOrDefaultAsync();
+           
            await _context.LoginUsers.AddAsync(new LoginUser { UserName = userDetails.UserName, entryTime = DateTime.Now });
            await _context.SaveChangesAsync();
            List<LoginUserDto> loginUser = new List<LoginUserDto>();
@@ -78,6 +83,7 @@ public class AuthService : IAuthService
            loginUser.Add(new LoginUserDto
            {
                userName = userDetails.UserName,
+               id=id,
                createdAt = DateTime.Now,
            });
            return new
@@ -111,6 +117,7 @@ public class AuthService : IAuthService
             new Claim(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Iat,
                 ((DateTimeOffset)DateTime.UtcNow).ToUnixTimeSeconds().ToString()),
             new Claim("UserName", loginUser[0].userName),
+            new Claim("UserId", loginUser[0].id.ToString()),
             new Claim("CreatedAt", loginUser[0].createdAt.ToString("o"))
         };
         
