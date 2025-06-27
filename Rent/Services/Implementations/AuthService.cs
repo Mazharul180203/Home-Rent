@@ -36,13 +36,13 @@ public class AuthService : IAuthService
                 LastName = data.LastName,
                 Email = data.Email,
                 Phone = data.Phone,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(data.PasswordHash),
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(data.Password),
                 UserType = data.UserType ?? "user",
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
             };
 
-            await _context.Users.AddAsync(userRegister);
+             _context.Users.Add(userRegister);
             await _context.SaveChangesAsync();
 
             return "user created successfully";

@@ -1,8 +1,10 @@
 ﻿using Data.DBContexts;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Services.Interfaces;
 
 namespace API.Controllers;
+[Authorize]
 [Route("api/[controller]")]
 [ApiController]
 
