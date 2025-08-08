@@ -2,5 +2,5 @@
 
 public interface IUserService
 {
-   public Task<object> GetUserContacts();
+   public Task<object> GetUserContacts(string userIdClaims);
 }

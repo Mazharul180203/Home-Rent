@@ -15,6 +15,7 @@ builder.Services.AddDbContext<AppDBContext>(options =>
         b=>b.MigrationsAssembly("Data")));
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IMapService, MapService>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 builder.Services.AddHttpClient();
 

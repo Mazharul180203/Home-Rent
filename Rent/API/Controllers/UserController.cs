@@ -24,8 +24,12 @@ public class UserController : ControllerBase
     {
         try
         {
-            var contacts = await _service.GetUserContacts();
-            return Ok(new { Status = "Success", Data = contacts });
+            var userIdClaims = User.FindFirst("UserId")?.Value;
+            if (string.IsNullOrEmpty(userIdClaims) || !int.TryParse(userIdClaims, out var userId))
+            {
+                return Unauthorized("Invalid User");
+            }
+            return await getResponse(await _service.GetUserContacts(userIdClaims));
         }
         catch (Exception ex)
         {
