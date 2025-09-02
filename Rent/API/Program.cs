@@ -1,6 +1,5 @@
 using API.JWT;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.OpenApi.Models;
 using Data.DBContexts;
 using Microsoft.AspNetCore.Authentication.JwtBearer;

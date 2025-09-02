@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Services.Interfaces;
 using System.Text;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Services.Implementations;
 
@@ -22,7 +23,7 @@ public class AuthService : IAuthService
         _configuration = configuration;
     }
 
-    public async Task<object> AddCreateRequest(UserRegistrationDto data)
+    public async Task<string> AddCreateRequest(UserRegistrationDto data)
     {
         try
         {

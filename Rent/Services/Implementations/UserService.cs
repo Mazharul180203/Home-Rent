@@ -1,6 +1,6 @@
 ﻿using Data.DBContexts;
+using Data.Dtos;
 using Data.Models;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Services.Interfaces;
 
@@ -33,6 +33,30 @@ public class UserService : IUserService
                 })
                 .ToListAsync();
             return usetDetails;
+        }
+        catch (Exception e)
+        {
+            throw new Exception($"An error occurred while fetching distance and time: {e.Message}");
+        }
+    }
+
+    public async Task<string> AddUserContacts(UserContactDto data, string userId)
+    {
+        try
+        {
+            var intUserId = int.Parse(userId);
+
+            var userContact = new OwnerContact()
+            {
+                OwnerId = intUserId,
+                ContactType = data.ContactType,
+                ContactValue = data.ContactValue,
+                CreatedAt = DateTime.Now
+            };
+            _context.OwnerContacts.Add(userContact);
+            _context.SaveChanges();
+
+            return "user created successfully";
         }
         catch (Exception e)
         {

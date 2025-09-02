@@ -21,3 +21,10 @@ public class UserRegistrationDto
     public DateTime? UpdatedAt { get; set; }
     
 }
+
+public class UserContactDto
+{
+    public string? ContactType { get; set; }
+    public string? ContactValue { get; set; }
+    public DateTime? CreatedAt { get; set; }
+}
