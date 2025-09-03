@@ -1,10 +1,12 @@
 ﻿using Data.DBContexts;
 using Data.Dtos;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Services.Interfaces;
 
 namespace API.Controllers;
 
+[Authorize]
 [Route("api/[controller]")]
 [ApiController]
     
@@ -38,6 +40,7 @@ public class UserController : ControllerBase
         }
     }
     
+    [HttpPost("add/user/contacts/info")]
     public async Task<IActionResult> AddUserContacts(UserContactDto data)
     {
         try
