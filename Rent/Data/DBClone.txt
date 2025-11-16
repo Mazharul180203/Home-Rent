@@ -1,0 +1,2 @@
+﻿dotnet ef dbcontext scaffold "Server=LAPTOP-G8231R3B;Database=ToLetDB;Integrated Security=True;TrustServerCertificate=True;" Microsoft.EntityFrameworkCore.SqlServer -o Models -c AppDBContext --context-dir DBContexts --use-database-names -f
+

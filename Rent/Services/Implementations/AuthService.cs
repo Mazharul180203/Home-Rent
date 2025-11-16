@@ -27,26 +27,7 @@ public class AuthService : IAuthService
     {
         try
         {
-            if (await _context.Users.AnyAsync(u => u.Email == data.Email))
-                return "user already exists";
-
-            var userRegister = new User()
-            {
-                UserName = data.UserName,
-                FirstName = data.FirstName,
-                LastName = data.LastName,
-                Email = data.Email,
-                Phone = data.Phone,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(data.Password),
-                UserType = data.UserType ?? "user",
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now
-            };
-
-             _context.Users.Add(userRegister);
-            await _context.SaveChangesAsync();
-
-            return "user created successfully";
+            return "dfa";
         }
         catch (Exception e)
         {
@@ -61,37 +42,7 @@ public class AuthService : IAuthService
            bool isEmail = System.Text.RegularExpressions.Regex.IsMatch(data.UserName, @"^[^@\s]+@[^@\s]+\.[^@\s]+$");
            bool isPhone = System.Text.RegularExpressions.Regex.IsMatch(data.UserName, @"^\+?\d{10,15}$");
 
-           var userDetails = isPhone
-               ? await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Phone == data.UserName)
-               : isEmail
-                   ? await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Email == data.UserName)
-                   : null;
-           
-           if (userDetails == null || !BCrypt.Net.BCrypt.Verify(data.Password, userDetails.PasswordHash))
-           {
-               return "Invalid credentials";
-           }
-           
-           var id = await _context.Users
-               .Where(u => u.Email.ToLower() == data.UserName.ToLower() || u.Phone == data.UserName)
-               .Select(u => u.Id)
-               .FirstOrDefaultAsync();
-           
-           await _context.LoginUsers.AddAsync(new LoginUser { UserName = userDetails.UserName, entryTime = DateTime.Now });
-           await _context.SaveChangesAsync();
-           List<LoginUserDto> loginUser = new List<LoginUserDto>();
-           
-           loginUser.Add(new LoginUserDto
-           {
-               userName = userDetails.UserName,
-               id=id,
-               createdAt = DateTime.Now,
-           });
-           return new
-           {
-               Token = GenerateWebToken(loginUser),
-           };
-           
+           return "dfd";
         }
         catch (Exception e)
         {
