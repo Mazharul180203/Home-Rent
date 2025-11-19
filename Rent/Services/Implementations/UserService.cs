@@ -20,19 +20,19 @@ public class UserService : IUserService
         try
         {
             int intUsedId = int.Parse(userId);
-            var userData = await _context.Users.FindAsync(intUsedId);
-            var usetDetails = await _context.Users
-                .Where(ud => ud.Id == userData.Id)
-                .Select(ud => new
-                {
-                    ud.Id,
-                    ud.FirstName,
-                    ud.LastName,
-                    ud.Email,
-                    
-                })
-                .ToListAsync();
-            return usetDetails;
+            // var userData = await _context.Users.FindAsync(intUsedId);
+            // var usetDetails = await _context.Users
+            //     .Where(ud => ud.Id == userData.Id)
+            //     .Select(ud => new
+            //     {
+            //         ud.Id,
+            //         ud.FirstName,
+            //         ud.LastName,
+            //         ud.Email,
+            //         
+            //     })
+            //     .ToListAsync();
+            return "data";
         }
         catch (Exception e)
         {
@@ -46,15 +46,15 @@ public class UserService : IUserService
         {
             var intUserId = int.Parse(userId);
 
-            var userContact = new OwnerContact()
-            {
-                OwnerId = intUserId,
-                ContactType = data.ContactType,
-                ContactValue = data.ContactValue,
-                CreatedAt = DateTime.Now
-            };
-            _context.OwnerContacts.Add(userContact);
-            _context.SaveChanges();
+            // var userContact = new OwnerContact()
+            // {
+            //     OwnerId = intUserId,
+            //     ContactType = data.ContactType,
+            //     ContactValue = data.ContactValue,
+            //     CreatedAt = DateTime.Now
+            // };
+            // _context.OwnerContacts.Add(userContact);
+            // _context.SaveChanges();
 
             return "user created successfully";
         }

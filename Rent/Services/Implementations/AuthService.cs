@@ -16,7 +16,8 @@ public class AuthService : IAuthService
 {
     private readonly AppDBContext _context;
     private readonly IConfiguration _configuration;
-    
+    private IAuthService _authServiceImplementation;
+
     public AuthService(AppDBContext context, IConfiguration configuration)
     {
         _context = context;
@@ -35,14 +36,16 @@ public class AuthService : IAuthService
         }
     }
 
-    public async Task<object> DoLoginRequest(LoginDto data)
+    public async Task<object> DoLoginRequest(user data)
     {
         try
         {
-           bool isEmail = System.Text.RegularExpressions.Regex.IsMatch(data.UserName, @"^[^@\s]+@[^@\s]+\.[^@\s]+$");
-           bool isPhone = System.Text.RegularExpressions.Regex.IsMatch(data.UserName, @"^\+?\d{10,15}$");
+           bool isEmail = System.Text.RegularExpressions.Regex.IsMatch(data.username, @"^[^@\s]+@[^@\s]+\.[^@\s]+$");
+           bool isPhone = System.Text.RegularExpressions.Regex.IsMatch(data.username, @"^\+?\d{10,15}$");
+           
+           
 
-           return "dfd";
+           return "dfred";
         }
         catch (Exception e)
         {
@@ -51,7 +54,7 @@ public class AuthService : IAuthService
     }
     
     
-    private string GenerateWebToken(List<LoginUserDto> loginUser)
+    private string GenerateWebToken(List<user> loginUser)
     {
         string key = _configuration["Jwt:Key"].ToString();
         string issuer = _configuration["Jwt:Issuer"].ToString();
@@ -68,9 +71,9 @@ public class AuthService : IAuthService
             new Claim(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new Claim(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Iat,
                 ((DateTimeOffset)DateTime.UtcNow).ToUnixTimeSeconds().ToString()),
-            new Claim("UserName", loginUser[0].userName),
+            new Claim("UserName", loginUser[0].username),
             new Claim("UserId", loginUser[0].id.ToString()),
-            new Claim("CreatedAt", loginUser[0].createdAt.ToString("o"))
+            //new Claim("CreatedAt", loginUser[0].created_at.ToString("o"))
         };
         
         var token = new JwtSecurityToken(
