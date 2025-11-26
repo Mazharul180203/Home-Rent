@@ -75,6 +75,7 @@ public class AuthService : IAuthService
            
            var Access_Token = GenerateWebToken(userInfo);
            var RefreshToken = GenerateRefreshToken(userInfo);
+           
            _context.RefreshTokens.Add(RefreshToken);
            await _context.SaveChangesAsync();
            return new
@@ -168,9 +169,6 @@ public class AuthService : IAuthService
         {
             throw new Exception("Refresh token already revoked");
         }
-        
-        List<UserInfoDto> tokenDataList = new List<UserInfoDto>();
-        
         var userInfo = new UserInfoDto
         {
             id = existingToken.UserId,

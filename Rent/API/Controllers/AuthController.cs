@@ -52,4 +52,11 @@ public class AuthController : ControllerBase
             return BadRequest(new { Status = "Error", Message = ex.Message });
         }
     }
+
+    [HttpPost("Auth/RefreshToken")]
+
+    public async Task<object> RefreshToken(string refreshToken)
+    {
+       return  await _service.RefreshToken(refreshToken);
+    }
 }
