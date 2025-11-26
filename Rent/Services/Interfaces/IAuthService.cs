@@ -7,5 +7,5 @@ namespace Services.Interfaces;
 public interface IAuthService
 {
     public Task<string> AddCreateRequest(UserRegistrationDto data);
-    public Task<object> DoLoginRequest(user data);
+    public Task<object> DoLoginRequest(LoginDto data);
 }

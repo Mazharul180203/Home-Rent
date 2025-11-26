@@ -1,11 +1,12 @@
 {
   "version": 2,
-  "dgSpecHash": "OUk4oDDpg/I=",
+  "dgSpecHash": "uDR5nOJpxyg=",
   "success": true,
   "projectFilePath": "D:\\C#\\Home-Rent\\Rent\\Data\\Data.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Md. Mazharul Islam\\.nuget\\packages\\azure.core\\1.38.0\\azure.core.1.38.0.nupkg.sha512",
     "C:\\Users\\Md. Mazharul Islam\\.nuget\\packages\\azure.identity\\1.11.4\\azure.identity.1.11.4.nupkg.sha512",
+    "C:\\Users\\Md. Mazharul Islam\\.nuget\\packages\\bcrypt.net-next\\4.0.3\\bcrypt.net-next.4.0.3.nupkg.sha512",
     "C:\\Users\\Md. Mazharul Islam\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
     "C:\\Users\\Md. Mazharul Islam\\.nuget\\packages\\microsoft.aspnetcore.http\\2.3.0\\microsoft.aspnetcore.http.2.3.0.nupkg.sha512",
     "C:\\Users\\Md. Mazharul Islam\\.nuget\\packages\\microsoft.aspnetcore.http.abstractions\\2.3.0\\microsoft.aspnetcore.http.abstractions.2.3.0.nupkg.sha512",

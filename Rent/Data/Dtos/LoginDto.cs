@@ -1,4 +1,6 @@
-﻿namespace Data.Dtos;
+﻿using System.Runtime.InteropServices.JavaScript;
+
+namespace Data.Dtos;
 
 public class LoginDto
 {
@@ -27,4 +29,10 @@ public class LoginDto
     public long? building_id { get; set; }
 
     public long? unit_id { get; set; }
+}
+
+public class UserInfoDto
+{
+    public long  id { get; set; }
+    public string ? role { get; set; }
 }

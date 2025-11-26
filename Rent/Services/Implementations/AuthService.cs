@@ -1,5 +1,7 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+﻿using System.Collections.Immutable;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using Data.DBContexts;
 using Data.Dtos;
 using Data.Models;
@@ -8,7 +10,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Services.Interfaces;
 using System.Text;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http.Metadata;
+
 
 namespace Services.Implementations;
 
@@ -36,16 +39,50 @@ public class AuthService : IAuthService
         }
     }
 
-    public async Task<object> DoLoginRequest(user data)
+    public async Task<object> DoLoginRequest(LoginDto data)
     {
         try
         {
            bool isEmail = System.Text.RegularExpressions.Regex.IsMatch(data.username, @"^[^@\s]+@[^@\s]+\.[^@\s]+$");
            bool isPhone = System.Text.RegularExpressions.Regex.IsMatch(data.username, @"^\+?\d{10,15}$");
-           
-           
+           user useDetails = null;
 
-           return "dfred";
+           if (isEmail && isPhone)
+           {
+               useDetails = isEmail
+                   ? await _context.users.FirstOrDefaultAsync(u => u.email == data.email)
+                   : await _context.users.FirstOrDefaultAsync(u => u.username == data.username);
+           }
+
+           if (useDetails == null)
+           {
+               return "User not Found";
+           }
+           bool isVarified = BCrypt.Net.BCrypt.Verify(data.password_hash, useDetails.password_hash);
+
+           if (!isVarified)
+           {
+               return "incorrect password";
+           }
+           
+           List<UserInfoDto> tokenDataList = new List<UserInfoDto>();
+           var userInfo = new UserInfoDto
+           {
+               id = useDetails.id,
+               role = useDetails.role,
+           };
+           tokenDataList.Add(userInfo);
+           
+           var Access_Token = GenerateWebToken(userInfo);
+           var RefreshToken = GenerateRefreshToken(userInfo);
+           _context.RefreshTokens.Add(RefreshToken);
+           await _context.SaveChangesAsync();
+           return new
+           {
+               AccessToken = Access_Token,
+               RefreshToken = RefreshToken,
+           };
+
         }
         catch (Exception e)
         {
@@ -54,7 +91,7 @@ public class AuthService : IAuthService
     }
     
     
-    private string GenerateWebToken(List<user> loginUser)
+    private string GenerateWebToken(UserInfoDto tokenDataList)
     {
         string key = _configuration["Jwt:Key"].ToString();
         string issuer = _configuration["Jwt:Issuer"].ToString();
@@ -65,26 +102,96 @@ public class AuthService : IAuthService
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
-        var claims = new[]
+        var claims = new []
         {
             new Claim(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub, subject),
             new Claim(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new Claim(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Iat,
                 ((DateTimeOffset)DateTime.UtcNow).ToUnixTimeSeconds().ToString()),
-            new Claim("UserName", loginUser[0].username),
-            new Claim("UserId", loginUser[0].id.ToString()),
-            //new Claim("CreatedAt", loginUser[0].created_at.ToString("o"))
+            new Claim("UserId", tokenDataList.id.ToString()),
+            new Claim("Role", tokenDataList.role)
+           
+            
         };
         
         var token = new JwtSecurityToken(
             issuer: issuer,
             audience: audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddHours(1),
+            expires: DateTime.UtcNow.AddMinutes(2),
             signingCredentials: credentials
         );
           
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+    
+    private RefreshToken GenerateRefreshToken(UserInfoDto tokenDataList)
+    {
+        
+        byte[] randomBytes = RandomNumberGenerator.GetBytes(64);
+        string rawToken = Convert.ToBase64String(randomBytes);
+
+        return new RefreshToken
+        {
+            UserId = tokenDataList.id,
+            TokenHash = HashToken(rawToken),
+            ExpiresAt = DateTime.UtcNow.AddDays(7),
+            CreatedAt = DateTime.UtcNow,
+
+        };
+    }
+
+    private string HashToken(string rawToken)
+    {
+        using var sha256Hash = SHA256.Create();
+        var hashBytes = sha256Hash.ComputeHash(Encoding.UTF8.GetBytes(rawToken));
+        return Convert.ToBase64String(hashBytes);
+    }
+
+
+    public async Task<object> RefreshToken(string refreshToken)
+    {
+        var hashedToken = HashToken(refreshToken);
+
+        var existingToken = await _context.RefreshTokens
+            .Include(t => t.User)
+            .SingleOrDefaultAsync(t => t.TokenHash == hashedToken);
+        
+        if(existingToken == null) throw new Exception("RefreshToken not found");
+
+        if (existingToken.ExpiresAt <= DateTime.UtcNow)
+        {
+            throw new Exception("RefreshToken is expired");
+        }
+
+        if (existingToken.RevokedAt != null)
+        {
+            throw new Exception("Refresh token already revoked");
+        }
+        
+        List<UserInfoDto> tokenDataList = new List<UserInfoDto>();
+        
+        var userInfo = new UserInfoDto
+        {
+            id = existingToken.UserId,
+            role = existingToken.User.role,
+        };
+        
+        var newRefreshToken = GenerateRefreshToken(userInfo);
+        existingToken.RevokedAt = DateTime.UtcNow;
+        existingToken.ReplacedByTokenHash = newRefreshToken.TokenHash;
+        
+        await _context.RefreshTokens.AddAsync(newRefreshToken);
+        await _context.SaveChangesAsync();
+        
+        var newAccessToken = GenerateWebToken(userInfo);
+        
+        return new
+        {
+            AccessToken = newAccessToken,
+            RefreshToken = newRefreshToken,
+        };
+        
     }
 
 }

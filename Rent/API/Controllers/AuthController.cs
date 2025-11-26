@@ -38,7 +38,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("Auth/DoLogin")]
 
-    public async Task<IActionResult> DoLogin(user data)
+    public async Task<IActionResult> DoLogin(LoginDto data)
     {
         try
         {
