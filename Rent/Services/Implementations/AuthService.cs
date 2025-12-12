@@ -43,21 +43,23 @@ public class AuthService : IAuthService
     {
         try
         {
-           bool isEmail = System.Text.RegularExpressions.Regex.IsMatch(data.username, @"^[^@\s]+@[^@\s]+\.[^@\s]+$");
-           bool isPhone = System.Text.RegularExpressions.Regex.IsMatch(data.username, @"^\+?\d{10,15}$");
+           // bool isEmail = System.Text.RegularExpressions.Regex.IsMatch(data.username, @"^[^@\s]+@[^@\s]+\.[^@\s]+$");
+           // bool isPhone = System.Text.RegularExpressions.Regex.IsMatch(data.username, @"^\+?\d{10,15}$");
+          
+           //
+           // if (isEmail && isPhone)
+           // {
+           //     useDetails = isEmail
+           //         ? await _context.users.FirstOrDefaultAsync(u => u.username == data.username)
+           //         : await _context.users.FirstOrDefaultAsync(u => u.username == data.username);
+           // }
+           
+           if(string.IsNullOrEmpty(data.username) || string.IsNullOrEmpty(data.password_hash))
+               return "username or password is required";
            user useDetails = null;
 
-           if (isEmail && isPhone)
-           {
-               useDetails = isEmail
-                   ? await _context.users.FirstOrDefaultAsync(u => u.email == data.email)
-                   : await _context.users.FirstOrDefaultAsync(u => u.username == data.username);
-           }
-
-           if (useDetails == null)
-           {
-               return "User not Found";
-           }
+           useDetails = await _context.users.FirstOrDefaultAsync(u => u.username == data.username);
+           
            bool isVarified = BCrypt.Net.BCrypt.Verify(data.password_hash, useDetails.password_hash);
 
            if (!isVarified)
@@ -65,23 +67,21 @@ public class AuthService : IAuthService
                return "incorrect password";
            }
            
-           List<UserInfoDto> tokenDataList = new List<UserInfoDto>();
            var userInfo = new UserInfoDto
            {
                id = useDetails.id,
                role = useDetails.role,
            };
-           tokenDataList.Add(userInfo);
            
-           var Access_Token = GenerateWebToken(userInfo);
-           var RefreshToken = GenerateRefreshToken(userInfo);
+           var accesstoken = GenerateWebToken(userInfo);
+           var refreshtoken = GenerateRefreshToken(userInfo);
            
-           _context.RefreshTokens.Add(RefreshToken);
+           _context.RefreshTokens.Add(refreshtoken);
            await _context.SaveChangesAsync();
            return new
            {
-               AccessToken = Access_Token,
-               RefreshToken = RefreshToken,
+               AccessToken = accesstoken,
+               RefreshToken = refreshtoken.TokenHash,
            };
 
         }
@@ -152,6 +152,9 @@ public class AuthService : IAuthService
 
     public async Task<object> RefreshToken(string refreshToken)
     {
+        if(string.IsNullOrEmpty(refreshToken))
+            throw new Exception("refreshToken is empty");
+        
         var hashedToken = HashToken(refreshToken);
 
         var existingToken = await _context.RefreshTokens
