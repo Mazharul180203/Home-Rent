@@ -72,16 +72,18 @@ public class AuthService : IAuthService
                id = useDetails.id,
                role = useDetails.role,
            };
-           
+
            var accesstoken = GenerateWebToken(userInfo);
-           var refreshtoken = GenerateRefreshToken(userInfo);
            
-           _context.RefreshTokens.Add(refreshtoken);
+           var refreshTokenEntity = new RefreshToken();
+           string rawRefreshToken = GenerateRefreshToken(userInfo, out refreshTokenEntity);
+           
+           _context.RefreshTokens.Add(refreshTokenEntity);
            await _context.SaveChangesAsync();
            return new
            {
                AccessToken = accesstoken,
-               RefreshToken = refreshtoken.TokenHash,
+               RefreshToken = rawRefreshToken,
            };
 
         }
@@ -126,13 +128,13 @@ public class AuthService : IAuthService
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
     
-    private RefreshToken GenerateRefreshToken(UserInfoDto tokenDataList)
+    private string GenerateRefreshToken(UserInfoDto tokenDataList, out RefreshToken tokenEntity)
     {
         
         byte[] randomBytes = RandomNumberGenerator.GetBytes(64);
         string rawToken = Convert.ToBase64String(randomBytes);
 
-        return new RefreshToken
+        tokenEntity = new RefreshToken
         {
             UserId = tokenDataList.id,
             TokenHash = HashToken(rawToken),
@@ -140,6 +142,7 @@ public class AuthService : IAuthService
             CreatedAt = DateTime.UtcNow,
 
         };
+        return rawToken;
     }
 
     private string HashToken(string rawToken)
@@ -178,11 +181,12 @@ public class AuthService : IAuthService
             role = existingToken.User.role,
         };
         
-        var newRefreshToken = GenerateRefreshToken(userInfo);
+        var refreshTokenEntity = new RefreshToken();
+        string rawRefreshToken = GenerateRefreshToken(userInfo, out refreshTokenEntity);
         existingToken.RevokedAt = DateTime.UtcNow;
-        existingToken.ReplacedByTokenHash = newRefreshToken.TokenHash;
+        existingToken.ReplacedByTokenHash = rawRefreshToken;
         
-        await _context.RefreshTokens.AddAsync(newRefreshToken);
+        await _context.RefreshTokens.AddAsync(refreshTokenEntity);
         await _context.SaveChangesAsync();
         
         var newAccessToken = GenerateWebToken(userInfo);
@@ -190,7 +194,7 @@ public class AuthService : IAuthService
         return new
         {
             AccessToken = newAccessToken,
-            RefreshToken = newRefreshToken,
+            RefreshToken = rawRefreshToken,
         };
         
     }
