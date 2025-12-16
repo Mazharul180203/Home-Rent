@@ -173,6 +173,13 @@ public class AuthService : IAuthService
 
         if (existingToken.RevokedAt != null)
         {
+            if (existingToken.ReplacedByTokenHash != null)
+            {
+                // Suspicious: Reuse of a rotated token → Possible theft!
+                // Revoke the entire chain
+                await RevokeTokenChainAsync(existingToken.ReplacedByTokenHash);
+                // Optional: Log/alert, force user password reset, etc.
+            }
             throw new Exception("Refresh token already revoked");
         }
         var userInfo = new UserInfoDto
@@ -184,7 +191,7 @@ public class AuthService : IAuthService
         var refreshTokenEntity = new RefreshToken();
         string rawRefreshToken = GenerateRefreshToken(userInfo, out refreshTokenEntity);
         existingToken.RevokedAt = DateTime.UtcNow;
-        existingToken.ReplacedByTokenHash = rawRefreshToken;
+        existingToken.ReplacedByTokenHash = refreshTokenEntity.TokenHash;
         
         await _context.RefreshTokens.AddAsync(refreshTokenEntity);
         await _context.SaveChangesAsync();
@@ -197,6 +204,20 @@ public class AuthService : IAuthService
             RefreshToken = rawRefreshToken,
         };
         
+    }
+    private async Task RevokeTokenChainAsync(string? startingHash)
+    {
+        while (!string.IsNullOrEmpty(startingHash))
+        {
+            var token = await _context.RefreshTokens
+                .FirstOrDefaultAsync(t => t.TokenHash == startingHash);
+
+            if (token == null) break;
+
+            token.RevokedAt = DateTime.UtcNow;
+            startingHash = token.ReplacedByTokenHash;  
+        }
+        await _context.SaveChangesAsync();
     }
 
 }
