@@ -27,11 +27,35 @@ public class AuthService : IAuthService
         _configuration = configuration;
     }
 
-    public async Task<string> AddCreateRequest(UserRegistrationDto data)
+    public async Task<string> CreateRegister(UserRegistrationDto data)
     {
         try
         {
-            return "dfa";
+            var userName = await _context.users.FirstOrDefaultAsync(x => x.username == data.username);
+            
+            if (userName != null)
+            {
+                throw new Exception("Username already exists");
+            }
+            
+            var passwordHash = BCrypt.Net.BCrypt.HashPassword(data.password);
+
+            var userData = new user
+            {
+                username = data.username,
+                password_hash = passwordHash,
+                role = data.role,
+                nid = data.nid,
+                address = data.address,
+                building_id = data.building_id,
+                unit_id = data.unit_id,
+                created_at = DateTime.UtcNow,
+                updated_at = DateTime.UtcNow
+            };
+
+            _context.users.AddAsync(userData);
+            await _context.SaveChangesAsync();
+            return "Registered Successfully";
         }
         catch (Exception e)
         {

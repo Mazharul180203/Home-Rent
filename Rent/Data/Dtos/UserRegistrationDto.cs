@@ -1,15 +1,28 @@
-﻿namespace Data.Dtos;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Data.Dtos;
 
 public class UserRegistrationDto
 {
-    public long id { get; set; }
+    [Required]
     public string username { get; set; } = null!;
-    public string password_hash { get; set; } = null!;
+    [Required]
+    [RegularExpression(
+        @"^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$",
+        ErrorMessage = "Password must be at least 8 characters long and contain 1 uppercase letter, 1 number, and 1 special character"
+    )]
+    public string password { get; set; } = null!;
+    [Required]
     public string role { get; set; } = null!;
+    [Required]
     public string nid { get; set; } = null!;
+    [Required]
     public string address { get; set; } = null!;
+    [Required]
     public long building_id { get; set; }
+    [Required]
     public long unit_id { get; set; }
+    [Required]
     public DateTime created_at { get; set; }
     public DateTime updated_at { get; set; }
     

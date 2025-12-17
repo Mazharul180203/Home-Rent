@@ -22,13 +22,13 @@ public class AuthController : ControllerBase
     }
 
 
-    [HttpPost("Auth/Register")]
+    [HttpPost("register")]
 
     public async Task<IActionResult> CreateRegister(UserRegistrationDto data)
     {
         try
         {
-            return await getResponse(await _service.AddCreateRequest(data));
+            return await getResponse(await _service.CreateRegister(data));
         }
         catch (Exception ex)
         {
@@ -36,7 +36,7 @@ public class AuthController : ControllerBase
         }
     }
 
-    [HttpPost("Auth/DoLogin")]
+    [HttpPost("doLogin")]
 
     public async Task<IActionResult> DoLogin(LoginDto data)
     {
@@ -53,7 +53,7 @@ public class AuthController : ControllerBase
         }
     }
 
-    [HttpPost("Auth/RefreshToken")]
+    [HttpPost("refreshToken")]
 
     public async Task<object> RefreshToken(string refreshToken)
     {

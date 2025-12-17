@@ -2,7 +2,9 @@ using API.JWT;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Data.DBContexts;
+using Data.Dtos;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Services.Implementations;
 using Services.Interfaces;
 
@@ -57,6 +59,27 @@ builder.Services.AddSwaggerGen(c =>
             new string[] {}
         }
     });
+});
+
+// for the common error message for the need of the proper validation
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var errors = context.ModelState
+            .Where(x => x.Value.Errors.Count > 0)
+            .ToDictionary(
+                x => x.Key,
+                x => x.Value.Errors.Select(e => e.ErrorMessage ?? "Invalid Value").ToArray()
+            );
+        var response = new CommonResponseDto()
+        {
+            Status = "Error",
+            Message = "One or more validation errors have occurred.",
+            Data = errors
+        };
+        return new BadRequestObjectResult(response);
+    };
 });
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddScheme<JwtBearerOptions, CustomJwtBearerHandler>(JwtBearerDefaults.AuthenticationScheme, options => { });
