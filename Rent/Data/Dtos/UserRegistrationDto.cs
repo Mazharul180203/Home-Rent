@@ -18,11 +18,6 @@ public class UserRegistrationDto
     public string nid { get; set; } = null!;
     [Required]
     public string address { get; set; } = null!;
-    [Required]
-    public long building_id { get; set; }
-    [Required]
-    public long unit_id { get; set; }
-    [Required]
     public DateTime created_at { get; set; }
     public DateTime updated_at { get; set; }
     

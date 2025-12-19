@@ -28,7 +28,7 @@ public class AuthController : ControllerBase
     {
         try
         {
-            return await getResponse(await _service.CreateRegister(data));
+            return await getResponse(await _service.CreateRegister(data),"Registered Successfully");
         }
         catch (Exception ex)
         {

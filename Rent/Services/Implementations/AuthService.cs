@@ -47,8 +47,6 @@ public class AuthService : IAuthService
                 role = data.role,
                 nid = data.nid,
                 address = data.address,
-                building_id = data.building_id,
-                unit_id = data.unit_id,
                 created_at = DateTime.UtcNow,
                 updated_at = DateTime.UtcNow
             };
