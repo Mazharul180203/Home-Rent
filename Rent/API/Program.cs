@@ -17,6 +17,7 @@ builder.Services.AddDbContext<AppDBContext>(options =>
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IMapService, MapService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ILandLordService, LandLordService>();
 
 builder.Services.AddHttpClient();
 

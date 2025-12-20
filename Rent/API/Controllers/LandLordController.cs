@@ -1,7 +1,9 @@
 ﻿using Data.DBContexts;
 using Data.Dtos;
+using Data.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Services.Interfaces;
 
 namespace API.Controllers;
@@ -22,7 +24,7 @@ public class LandLordController : ControllerBase
 
      [HttpPost("properties")]
 
-     public async Task<IActionResult> createProperties(propetiesDto data)
+     public async Task<IActionResult> CreateProperties(propetiesDto data)
      {
           try
           {
@@ -32,9 +34,23 @@ public class LandLordController : ControllerBase
                     return Unauthorized("Invalid User");
                }
 
-               return await getResponse(_service.createProperties(data, UserIDClaims));
+               return await getResponse(_service.CreatePropertiesService(data, UserIDClaims));
 
 
+          }
+          catch (Exception ex)
+          {
+               return BadRequest(new { Status = "Error", Message = ex.Message });
+          }
+     }
+
+     [HttpGet("properties/{id}")]
+
+     public async Task<IActionResult> GetProperties(long id)
+     {
+          try
+          {
+               return await getResponse(_service.GetPropertyService(id));
           }
           catch (Exception ex)
           {

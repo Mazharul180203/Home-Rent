@@ -8,8 +8,13 @@ namespace Services.Implementations;
 public class LandLordService :ILandLordService
 {
     private readonly AppDBContext _context;
+    
+    public LandLordService(AppDBContext context)
+    {
+        _context = context;
+    }
 
-    public async Task<object> createProperties(propetiesDto data, string UserIDClaims)
+    public async Task<object> CreatePropertiesService(propetiesDto data, string UserIDClaims)
     {
         var properties = new property
         {
@@ -25,8 +30,18 @@ public class LandLordService :ILandLordService
 
         };
         
-        _context.properties.AddAsync(properties);
-        _context.SaveChangesAsync();
+        await _context.properties.AddAsync(properties);
+        await _context.SaveChangesAsync();
         return "Property Created Successfully";
+    }
+    
+    public async Task<object> GetPropertyService(long id)
+    {
+        var property = await _context.properties.FindAsync(id);
+        if (property == null)
+        {
+            return "Property not found";
+        }
+        return property;
     }
 }
