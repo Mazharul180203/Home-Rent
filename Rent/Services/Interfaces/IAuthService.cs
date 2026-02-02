@@ -6,7 +6,7 @@ namespace Services.Interfaces;
 
 public interface IAuthService
 {
-    public Task<string> CreateRegister(UserRegistrationDto data);
-    public Task<object> DoLoginRequest(LoginDto data);
+    public Task<CommonResponseDto> CreateRegister(UserRegistrationDto data);
+    public Task<LoginResponseDto> DoLoginRequest(LoginDto data);
     public Task<object> RefreshToken(string refreshToken);
 }

@@ -45,7 +45,6 @@ public class LandLordController : ControllerBase
      }
 
      [HttpGet("properties/{id}")]
-
      public async Task<IActionResult> GetProperties(long id)
      {
           try

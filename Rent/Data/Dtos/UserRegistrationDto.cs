@@ -7,11 +7,15 @@ public class UserRegistrationDto
     [Required]
     public string username { get; set; } = null!;
     [Required]
+    public string email { get; set; } = null!;
+    [Required]
     [RegularExpression(
         @"^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$",
         ErrorMessage = "Password must be at least 8 characters long and contain 1 uppercase letter, 1 number, and 1 special character"
     )]
+    
     public string password { get; set; } = null!;
+    
     [Required]
     public string role { get; set; } = null!;
     [Required]

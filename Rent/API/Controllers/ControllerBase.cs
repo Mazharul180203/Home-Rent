@@ -4,10 +4,10 @@ using Utility;
 
 public class ControllerBase : Microsoft.AspNetCore.Mvc.ControllerBase
 {
-    protected async Task<ActionResult> getResponse(object data, string Message = "")
+    protected async Task<ActionResult> getResponse(object data, string status, string Message)
     {
         CommonResponseDto response = new CommonResponseDto();
-        response.Status = "Success";
+        response.Status = status;
         response.Message = Message;
         response.Data = data;
         

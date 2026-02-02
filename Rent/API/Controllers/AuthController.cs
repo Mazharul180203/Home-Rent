@@ -28,11 +28,12 @@ public class AuthController : ControllerBase
     {
         try
         {
-            return await getResponse(await _service.CreateRegister(data),"Registered Successfully");
+            CommonResponseDto response = await _service.CreateRegister(data);
+            return await getResponse(response.Data, response.Status, response.Message);
         }
         catch (Exception ex)
         {
-            return BadRequest(new { Status = "Error", Message = ex.Message });
+            return BadRequest(getResponse( null,"fail", "ex.Message" ));
         }
     }
 
@@ -42,14 +43,12 @@ public class AuthController : ControllerBase
     {
         try
         {
-            var response = await _service.DoLoginRequest(data);
-            return response == "Invalid credentials" ? 
-                await getResponse(response,"Invalid credentials") 
-                : await getResponse(response, "Login successful");
+            LoginResponseDto response = await _service.DoLoginRequest(data);
+            return await getResponse(response, response.Status, response.Message);
         }
         catch (Exception ex)
         {
-            return BadRequest(new { Status = "Error", Message = ex.Message });
+            return BadRequest(getResponse( null,"fail", "ex.Message" ));
         }
     }
 

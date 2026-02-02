@@ -26,7 +26,7 @@ public class AuthService : IAuthService
         _configuration = configuration;
     }
 
-    public async Task<string> CreateRegister(UserRegistrationDto data)
+    public async Task<CommonResponseDto> CreateRegister(UserRegistrationDto data)
     {
         try
         {
@@ -34,7 +34,12 @@ public class AuthService : IAuthService
             
             if (userName != null)
             {
-                throw new Exception("Username already exists");
+               return new CommonResponseDto
+               {
+                   Status = "fail",
+                   Message = "Username already exists",
+                   Data = null
+               };
             }
             
             var passwordHash = BCrypt.Net.BCrypt.HashPassword(data.password);
@@ -43,6 +48,7 @@ public class AuthService : IAuthService
             {
                 username = data.username,
                 password_hash = passwordHash,
+                email = data.email,
                 role = data.role,
                 nid = data.nid,
                 address = data.address,
@@ -52,15 +58,25 @@ public class AuthService : IAuthService
 
             _context.users.AddAsync(userData);
             await _context.SaveChangesAsync();
-            return "Registered Successfully";
+            return new CommonResponseDto
+            {
+                Status = "success",
+                Message = "User registered successfully",
+                Data = null
+            };
         }
         catch (Exception e)
         {
-            return $"An error occurred: {e.Message}";
+            return new CommonResponseDto
+            {
+                Status = "error",
+                Message = $"An error occurred: {e.Message}",
+                Data = null
+            };
         }
     }
 
-    public async Task<object> DoLoginRequest(LoginDto data)
+    public async Task<LoginResponseDto> DoLoginRequest(LoginDto data)
     {
         try
         {
@@ -76,7 +92,12 @@ public class AuthService : IAuthService
            // }
            
            if(string.IsNullOrEmpty(data.username) || string.IsNullOrEmpty(data.password_hash))
-               return "username or password is required";
+               return new LoginResponseDto
+               {
+                   Status = "fail",
+                   Message = "Username or password cannot be empty",
+                   Tokens = null
+               };
            user useDetails = null;
 
            useDetails = await _context.users.FirstOrDefaultAsync(u => u.username == data.username);
@@ -85,7 +106,12 @@ public class AuthService : IAuthService
 
            if (!isVarified)
            {
-               return "incorrect password";
+               return new LoginResponseDto
+               {
+                   Status = "fail",
+                   Message = "Invalid credentials",
+                   Tokens = null
+               };
            }
            
            var userInfo = new UserInfoDto
@@ -101,16 +127,30 @@ public class AuthService : IAuthService
            
            _context.RefreshTokens.Add(refreshTokenEntity);
            await _context.SaveChangesAsync();
-           return new
+           return new LoginResponseDto
            {
-               AccessToken = accesstoken,
-               RefreshToken = rawRefreshToken,
+               Status = "fail",
+               Message = "Invalid credentials",
+              Tokens = new List<TokenDto>
+              {
+                    new TokenDto
+                    {
+                        AccessToken = accesstoken,
+                        RefreshToken = rawRefreshToken
+                    }
+              }
+               
            };
 
         }
         catch (Exception e)
         {
-            return $"An error occurred: {e.Message}";
+            return new LoginResponseDto
+            {
+                Status = "error",
+                Message = $"An error occurred: {e.Message}",
+                Tokens = null
+            };
         }
     }
     
