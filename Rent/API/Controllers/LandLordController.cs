@@ -33,14 +33,13 @@ public class LandLordController : ControllerBase
                {
                     return Unauthorized("Invalid User");
                }
-
-               return await getResponse(_service.CreatePropertiesService(data, UserIDClaims));
-
-
+               
+               CommonResponseDto response = await _service.CreatePropertiesService(data, UserIDClaims);
+               return await getResponse(response.Data, response.Status, response.Message);
           }
           catch (Exception ex)
           {
-               return BadRequest(new { Status = "Error", Message = ex.Message });
+               return await getResponse("","fail",  ex.Message );
           }
      }
 
@@ -49,7 +48,8 @@ public class LandLordController : ControllerBase
      {
           try
           {
-               return await getResponse(_service.GetPropertyService(id));
+               CommonResponseDto response = await _service.GetPropertyService(id);
+               return await getResponse(response.Data, response.Status, response.Message);
           }
           catch (Exception ex)
           {

@@ -6,6 +6,6 @@ namespace Services.Interfaces;
 
 public interface ILandLordService
 {
-   public Task<object> CreatePropertiesService(propetiesDto data, string useridClaims);
-   public Task<object> GetPropertyService(long id);
+   public Task<CommonResponseDto> CreatePropertiesService(propetiesDto data, string useridClaims);
+   public Task<CommonResponseDto> GetPropertyService(long id);
 }

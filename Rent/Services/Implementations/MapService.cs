@@ -18,20 +18,30 @@ public class MapService : IMapService
         _configuration = configuration;
     }
     
-    public async Task<object> GetCoordinate(string address)
+    public async Task<CommonResponseDto> GetCoordinate(string address)
     {
         try
         {
-            return await GetAddressCoordinates(address);
+            return new CommonResponseDto
+            {
+                Status = "success",
+                Message = "Address retrieved successfully",
+                Data = await GetAddressCoordinates(address),
+            };
         }
         catch (Exception e)
         {
-            return $"An error occurred: {e.Message}";
+            return new CommonResponseDto
+            {
+                Status = "fail",
+                Message = "Something went wrong",
+                Data = e.Message,
+            };
         }
     }
 
 
-    public async Task<object> GetDistanceAndTime(string origin, string destination)
+    public async Task<CommonResponseDto> GetDistanceAndTime(string origin, string destination)
     {
         try
         {
@@ -50,16 +60,31 @@ public class MapService : IMapService
             
             try
             {
-                return await GetDistanceDirection(originArray, destinationArray);
+                return new CommonResponseDto
+                {
+                    Status = "success",
+                    Message = "Address retrieved successfully",
+                    Data = await GetDistanceDirection(originArray, destinationArray),
+                };
             }
             catch (Exception e)
             {
-                return $"An error occurred: {e.Message}";
+                return new CommonResponseDto
+                {
+                    Status = "fail",
+                    Message = "Something went wrong",
+                    Data = e.Message,
+                };
             }
         }
         catch (Exception e)
         {
-            return $"An error occurred: {e.Message}";
+            return new CommonResponseDto
+            {
+                Status = "fail",
+                Message = "Something went wrong",
+                Data = e.Message,
+            };
         }
     }
 

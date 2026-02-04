@@ -1,4 +1,5 @@
 ﻿using Data.DBContexts;
+using Data.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Services.Interfaces;
@@ -24,12 +25,12 @@ public class MapController : ControllerBase
     {
         try
         {
-            var coordinates = await _service.GetCoordinate(address);
-            return await getResponse(coordinates, "Coordinates retrieved successfully");
+            CommonResponseDto response = await _service.GetCoordinate(address);
+            return await getResponse(response.Data, response.Status, response.Message);
         }
         catch (Exception ex)
         {
-            return BadRequest(new { Status = "Error", Message = ex.Message });
+            return await getResponse("","fail",  ex.Message );
         }
     }
     
@@ -39,12 +40,12 @@ public class MapController : ControllerBase
     {
         try
         {
-            var result = await _service.GetDistanceAndTime(origin, destination);
-            return await getResponse(result, "Distance and time retrieved successfully");
+            CommonResponseDto response = await _service.GetDistanceAndTime(origin, destination);
+            return await getResponse(response.Data, response.Status, response.Message);
         }
         catch (Exception ex)
         {
-            return BadRequest(new { Status = "Error", Message = ex.Message });
+            return await getResponse("","fail",  ex.Message );
         }
     }
 }
