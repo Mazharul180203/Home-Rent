@@ -22,77 +22,54 @@ public class CustomJwtBearerHandler : JwtBearerHandler
 
     }
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
-{
-    // Get the token from the Authorization header
-    if (!Context.Request.Headers.TryGetValue("Authorization", out var authorizationHeaderValues))
     {
-        return AuthenticateResult.Fail("Authorization header not found.");
+        // 1. Extract Token
+        if (!Context.Request.Headers.TryGetValue("Authorization", out var authHeader))
+        {
+            return AuthenticateResult.Fail("Authorization header not found.");
+        }
+
+        var token = authHeader.ToString().Replace("Bearer ", "").Trim();
+        if (string.IsNullOrEmpty(token))
+        {
+            return AuthenticateResult.Fail("Token is empty.");
+        }
+
+        // 2. Validate and Get Principal in one go
+        try
+        {
+            var principal = ValidateAndGetPrincipal(token);
+            var ticket = new AuthenticationTicket(principal, Scheme.Name);
+            return AuthenticateResult.Success(ticket);
+        }
+        catch (Exception ex)
+        {
+            return AuthenticateResult.Fail($"Token validation failed: {ex.Message}");
+        }
     }
 
-    var authorizationHeader = authorizationHeaderValues.FirstOrDefault();
-    if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer "))
+    private ClaimsPrincipal ValidateAndGetPrincipal(string token)
     {
-        return AuthenticateResult.Fail("Bearer token not found in Authorization header.");
-    }
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var key = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]);
 
-    var token = authorizationHeader.Substring("Bearer ".Length).Trim();
-
-
-   Context.Request.Headers.TryGetValue("Authorization", out var stoken);
-
-    // Return an authentication failure if the response is not successful
-    if (!ValidateToken(token, stoken))
-    {
-        return AuthenticateResult.Fail("Token validation failed.");
-    }
-
-    // Set the authentication result with the claims from the API response
-    var principal = GetClaims(token);
-
-    return AuthenticateResult.Success(new AuthenticationTicket(principal, "CustomJwtBearer"));
-}
-
-public bool ValidateToken(string token,string stoken)
-{
-    if (token == null)
-        return false;
-
-    var tokenHandler = new JwtSecurityTokenHandler();
-    
-    try
-    {
-        string Audience = _configuration["Jwt:Audience"];
-        string Issuer = _configuration["Jwt:Issuer"];
-        string Key = _configuration["Jwt:Key"];
-
-        tokenHandler.ValidateToken(token, new TokenValidationParameters
+        var validationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
+            ValidIssuer = _configuration["Jwt:Issuer"],
             ValidateAudience = true,
-            ValidAudience = Audience,
-            ValidIssuer = Issuer,
-            IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(Encoding.UTF8.GetBytes(Key))
-        }, out Microsoft.IdentityModel.Tokens.SecurityToken validatedToken);
+            ValidAudience = _configuration["Jwt:Audience"],
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(key),
+        
+            // This tells the validator how to map the JSON to User.IsInRole()
+            RoleClaimType = "role", 
+            NameClaimType = "sub"
+        };
 
-        var jwtToken = (JwtSecurityToken)validatedToken;
-        return true;
+        // This method validates AND creates the ClaimsPrincipal with the correct settings
+        var principal = tokenHandler.ValidateToken(token, validationParameters, out _);
+
+        return principal;
     }
-    catch(Exception ex)
-    {
-        // return null if validation fails
-        return false;
-    }
-}
-private ClaimsPrincipal GetClaims(string Token)
-{
-    var handler = new JwtSecurityTokenHandler();
-    var token = handler.ReadToken(Token) as JwtSecurityToken;
-
-    var claimsIdentity = new ClaimsIdentity(token.Claims, "Token");
-    var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
-
-
-
-    return claimsPrincipal;
-}
 }

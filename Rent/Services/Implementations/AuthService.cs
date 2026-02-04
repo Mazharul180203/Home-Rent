@@ -80,16 +80,6 @@ public class AuthService : IAuthService
     {
         try
         {
-           // bool isEmail = System.Text.RegularExpressions.Regex.IsMatch(data.username, @"^[^@\s]+@[^@\s]+\.[^@\s]+$");
-           // bool isPhone = System.Text.RegularExpressions.Regex.IsMatch(data.username, @"^\+?\d{10,15}$");
-          
-           //
-           // if (isEmail && isPhone)
-           // {
-           //     useDetails = isEmail
-           //         ? await _context.users.FirstOrDefaultAsync(u => u.username == data.username)
-           //         : await _context.users.FirstOrDefaultAsync(u => u.username == data.username);
-           // }
            
            if(string.IsNullOrEmpty(data.username) || string.IsNullOrEmpty(data.password_hash))
                return new LoginResponseDto
@@ -129,8 +119,8 @@ public class AuthService : IAuthService
            await _context.SaveChangesAsync();
            return new LoginResponseDto
            {
-               Status = "fail",
-               Message = "Invalid credentials",
+               Status = "Success",
+               Message = "Login successfully",
               Tokens = new List<TokenDto>
               {
                     new TokenDto
@@ -173,7 +163,7 @@ public class AuthService : IAuthService
             new Claim(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Iat,
                 ((DateTimeOffset)DateTime.UtcNow).ToUnixTimeSeconds().ToString()),
             new Claim("UserId", tokenDataList.id.ToString()),
-            new Claim("Role", tokenDataList.role)
+            new Claim("role", tokenDataList.role)
            
             
         };
@@ -189,6 +179,7 @@ public class AuthService : IAuthService
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
     
+
     private string GenerateRefreshToken(UserInfoDto tokenDataList, out RefreshToken tokenEntity)
     {
         

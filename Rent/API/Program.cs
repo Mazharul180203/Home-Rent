@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using API.JWT;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
@@ -16,7 +17,6 @@ builder.Services.AddDbContext<AppDBContext>(options =>
         b=>b.MigrationsAssembly("Data")));
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IMapService, MapService>();
-builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ILandLordService, LandLordService>();
 
 builder.Services.AddHttpClient();
@@ -85,7 +85,7 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddScheme<JwtBearerOptions, CustomJwtBearerHandler>(JwtBearerDefaults.AuthenticationScheme, options => { });
 
-
+JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 var app = builder.Build();
 
 

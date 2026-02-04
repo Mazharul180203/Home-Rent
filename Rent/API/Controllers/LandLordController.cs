@@ -8,7 +8,7 @@ using Services.Interfaces;
 
 namespace API.Controllers;
 
-[Authorize(Roles = "owner,admin")]
+[Authorize(Roles = "Admin, Owner")]
 [Route("api/[controller]")]
 [ApiController]
 public class LandLordController : ControllerBase
