@@ -13,12 +13,10 @@ namespace API.Controllers;
 [ApiController]
 public class LandLordController : ControllerBase
 {
-     private readonly AppDBContext _context;
      private readonly ILandLordService _service;
 
-     public LandLordController(AppDBContext context, ILandLordService service)
+     public LandLordController(ILandLordService service)
      {
-          _context = context;
           _service = service;
      }
 

@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http;
 
 namespace Data.Dtos;
 
@@ -32,4 +33,15 @@ public class UserContactDto
     public string? ContactType { get; set; }
     public string? ContactValue { get; set; }
     public DateTime? CreatedAt { get; set; }
+}
+
+public class ProfileUpdateDto
+{
+    public string? full_name { get; set; }
+
+    public string? phone { get; set; }
+    public string? email { get; set; }
+    public decimal? screening_score { get; set; }
+    public string? background_check { get; set; }
+    public string? profile_pic { get; set; }
 }

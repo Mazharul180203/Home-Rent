@@ -12,12 +12,10 @@ namespace API.Controllers;
 [ApiController]
 public class AuthController : ControllerBase
 {
-    private readonly AppDBContext _context;
     private readonly IAuthService _service;
     
-    public AuthController(AppDBContext context, IAuthService service)
+    public AuthController(IAuthService service)
     {
-        _context = context;
         _service = service;
     }
 
