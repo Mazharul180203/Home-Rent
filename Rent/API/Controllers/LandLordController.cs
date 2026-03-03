@@ -67,7 +67,7 @@ public class LandLordController : ControllerBase
                     return await getResponse("", "fail", "Invalid UserID");
                }
                
-               double UserID = double.Parse(userIdClaims);
+               long UserID = long.Parse(userIdClaims);
                CommonResponseDto response = await _service.CreateUnitsService(UserID,data);
                return await getResponse(response.Data, response.Status, response.Message);
           }

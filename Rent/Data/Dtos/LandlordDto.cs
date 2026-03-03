@@ -51,5 +51,5 @@ public class unitDto
     public DateTime? created_at { get; set; }
     public DateTime? updated_at { get; set; }
     [Required]
-    public IFormFile? photos { get; set; }
+    public string? photos { get; set; }
 }

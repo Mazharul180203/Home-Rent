@@ -75,7 +75,7 @@ public class LandLordService :ILandLordService
         };
     }
 
-    public async Task<CommonResponseDto> CreateUnitsService(double UserID, unitDto data)
+    public async Task<CommonResponseDto> CreateUnitsService(long UserID, unitDto data)
     {
         try
         {
@@ -84,14 +84,18 @@ public class LandLordService :ILandLordService
                 .ToListAsync();
 
             int cnt = 0;
-            foreach (var property in properties)
+            if (properties.Count > 0)
             {
-                if (property.id == data.building_id)
+                foreach (var property in properties)
                 {
-                    cnt++;
-                    break;
-                }
+                    if (property.id == data.building_id && property.owner_id == UserID)
+                    {
+                        cnt++;
+                        break;
+                    }
+                } 
             }
+            
             if (cnt == 0)
             {
                 return new CommonResponseDto
