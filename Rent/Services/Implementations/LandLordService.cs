@@ -1,6 +1,7 @@
 ﻿using Data.DBContexts;
 using Data.Dtos;
 using Data.Models;
+using Microsoft.EntityFrameworkCore;
 using Services.Interfaces;
 
 namespace Services.Implementations;
@@ -72,5 +73,65 @@ public class LandLordService :ILandLordService
             Message = "Property registered successfully",
             Data = property
         };
+    }
+
+    public async Task<CommonResponseDto> CreateUnitsService(double UserID, unitDto data)
+    {
+        try
+        {
+            List<property> properties = await _context.properties
+                .Where(u => u.owner_id == UserID)
+                .ToListAsync();
+
+            int cnt = 0;
+            foreach (var property in properties)
+            {
+                if (property.id == data.building_id)
+                {
+                    cnt++;
+                    break;
+                }
+            }
+            if (cnt == 0)
+            {
+                return new CommonResponseDto
+                {
+                    Status = "fail",
+                    Message = "No properties found for user for that building",
+                    Data = null
+                };
+            }
+
+            var units = new unitDto
+            {
+                building_id = data.building_id,
+                unit_number = data.unit_number,
+                status = data.status,
+                rent_amount = data.rent_amount,
+                description = data.description,
+                square_feet = data.square_feet,
+                bedrooms = data.bedrooms,
+                bathrooms = data.bathrooms,
+                photos = data.photos,
+                created_at = DateTime.UtcNow,
+                updated_at = DateTime.UtcNow
+            };
+
+            return new CommonResponseDto
+            {
+                Status = "success",
+                Message = "Unit added successfully",
+                Data = units
+            };
+        }
+        catch(Exception e)
+        {
+            return new CommonResponseDto
+            {
+                Status = "error",
+                Message = $"An error occurred: {e.Message}",
+                Data = null
+            };
+        }
     }
 }

@@ -20,7 +20,7 @@ public class LandLordController : ControllerBase
           _service = service;
      }
 
-     [HttpPost("properties")]
+     [HttpPost("create/properties")]
 
      public async Task<IActionResult> CreateProperties(propetiesDto data)
      {
@@ -29,7 +29,7 @@ public class LandLordController : ControllerBase
                var UserIDClaims = User.FindFirst("UserId")?.Value;
                if (string.IsNullOrEmpty(UserIDClaims) || !int.TryParse(UserIDClaims, out var userId))
                {
-                    return Unauthorized("Invalid User");
+                    return await getResponse("", "fail", "Invalid UserID");
                }
                
                CommonResponseDto response = await _service.CreatePropertiesService(data, UserIDClaims);
@@ -51,7 +51,29 @@ public class LandLordController : ControllerBase
           }
           catch (Exception ex)
           {
-               return BadRequest(new { Status = "Error", Message = ex.Message });
+               return await getResponse("", "fail", ex.Message);
+          }
+     }
+
+     [HttpPost("create/units")]
+
+     public async Task<IActionResult> CreateUnits([FromBody]unitDto data)
+     {
+          try
+          {
+               var userIdClaims = User.FindFirst("UserId")?.Value;
+               if (string.IsNullOrEmpty(userIdClaims) || !int.TryParse(userIdClaims, out var userId))
+               {
+                    return await getResponse("", "fail", "Invalid UserID");
+               }
+               
+               double UserID = double.Parse(userIdClaims);
+               CommonResponseDto response = await _service.CreateUnitsService(UserID,data);
+               return await getResponse(response.Data, response.Status, response.Message);
+          }
+          catch (Exception e)
+          {
+               return await getResponse("","fail",  e.Message );
           }
      }
      

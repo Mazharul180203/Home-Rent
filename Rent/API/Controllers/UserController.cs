@@ -1,8 +1,13 @@
 ﻿using Data.Dtos;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Services.Interfaces;
 
 namespace API.Controllers;
+
+[Authorize(Roles = "Admin, Owner,Tenant")]
+[Route("api/[controller]")]
+[ApiController]
 
 public class UserController : ControllerBase
 {
