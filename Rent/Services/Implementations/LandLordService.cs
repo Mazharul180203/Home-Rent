@@ -127,6 +127,7 @@ public class LandLordService :ILandLordService
                 }
 
                 var uniqueFileName = $"{Guid.NewGuid()}{ext}";
+                var originalPath = Path.Combine("uploads", uniqueFileName);
                 var physicalPath = Path.Combine(uploadFolder, uniqueFileName);
 
                 using (var fileStream = new FileStream(physicalPath, FileMode.Create))
@@ -144,7 +145,7 @@ public class LandLordService :ILandLordService
                     square_feet = data.square_feet,
                     bedrooms = data.bedrooms,
                     bathrooms = data.bathrooms,
-                    filePath = physicalPath,
+                    filePath = originalPath,
                     fileName = file.FileName,
                     created_at = DateTime.UtcNow,
                     updated_at = DateTime.UtcNow
