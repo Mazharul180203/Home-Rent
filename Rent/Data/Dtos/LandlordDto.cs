@@ -46,10 +46,9 @@ public class unitDto
     public int? bedrooms { get; set; }
     [Required]
     public int? bathrooms { get; set; }
-    [Required]
     public DateTime? deleted_at { get; set; }
     public DateTime? created_at { get; set; }
     public DateTime? updated_at { get; set; }
     [Required]
-    public List<IFormFile>photos { get; set; }
+    public List<IFormFile>filePath { get; set; }
 }

@@ -109,7 +109,7 @@ public class LandLordService :ILandLordService
 
             var uploadFiles = new List<string>();
             
-            foreach (var file in data.photos)
+            foreach (var file in data.filePath)
             {
                 if (file == null || file.Length == 0) throw new ArgumentNullException("File is null or empty");
                 
@@ -144,7 +144,8 @@ public class LandLordService :ILandLordService
                     square_feet = data.square_feet,
                     bedrooms = data.bedrooms,
                     bathrooms = data.bathrooms,
-                    photos = physicalPath,
+                    filePath = physicalPath,
+                    fileName = file.FileName,
                     created_at = DateTime.UtcNow,
                     updated_at = DateTime.UtcNow
                 };

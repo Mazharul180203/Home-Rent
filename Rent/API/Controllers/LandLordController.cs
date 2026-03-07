@@ -57,7 +57,7 @@ public class LandLordController : ControllerBase
 
      [HttpPost("create/units")]
 
-     public async Task<IActionResult> CreateUnits([FromBody]unitDto data)
+     public async Task<IActionResult> CreateUnits([FromForm] unitDto data)
      {
           try
           {

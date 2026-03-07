@@ -253,6 +253,26 @@
       "PackagePath": "staticwebassets\\lib\\jquery\\dist\\jquery.slim.min.map"
     },
     {
+      "Id": "D:\\C#\\Home-Rent\\Rent\\API\\wwwroot\\uploads\\2951cc10-51fd-42ba-a6c3-35cc1ae71f8b.png",
+      "PackagePath": "staticwebassets\\uploads\\2951cc10-51fd-42ba-a6c3-35cc1ae71f8b.png"
+    },
+    {
+      "Id": "D:\\C#\\Home-Rent\\Rent\\API\\wwwroot\\uploads\\7020116a-6c82-4cfb-943d-0ca8efbdf6f1.jpg",
+      "PackagePath": "staticwebassets\\uploads\\7020116a-6c82-4cfb-943d-0ca8efbdf6f1.jpg"
+    },
+    {
+      "Id": "D:\\C#\\Home-Rent\\Rent\\API\\wwwroot\\uploads\\a74a8cc9-b029-4742-892d-9f9be8a9daaa.png",
+      "PackagePath": "staticwebassets\\uploads\\a74a8cc9-b029-4742-892d-9f9be8a9daaa.png"
+    },
+    {
+      "Id": "D:\\C#\\Home-Rent\\Rent\\API\\wwwroot\\uploads\\abe1ce2f-a5ab-475b-a61a-f0db807d3b45.png",
+      "PackagePath": "staticwebassets\\uploads\\abe1ce2f-a5ab-475b-a61a-f0db807d3b45.png"
+    },
+    {
+      "Id": "D:\\C#\\Home-Rent\\Rent\\API\\wwwroot\\uploads\\fd9d761b-6378-4e19-b48e-eadb03fa636a.jpeg",
+      "PackagePath": "staticwebassets\\uploads\\fd9d761b-6378-4e19-b48e-eadb03fa636a.jpeg"
+    },
+    {
       "Id": "obj\\Debug\\net9.0\\staticwebassets\\msbuild.API.Microsoft.AspNetCore.StaticWebAssetEndpoints.props",
       "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssetEndpoints.props"
     },
