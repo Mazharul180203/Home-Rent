@@ -109,6 +109,24 @@ public class LandLordService :ILandLordService
 
             var uploadFiles = new List<string>();
             
+            
+            var addUnits = new unit
+            {
+                building_id = data.building_id,
+                unit_number = data.unit_number,
+                status = data.status,
+                rent_amount = data.rent_amount,
+                description = data.description,
+                square_feet = data.square_feet,
+                bedrooms = data.bedrooms,
+                bathrooms = data.bathrooms,
+                created_at = DateTime.UtcNow,
+                updated_at = DateTime.UtcNow
+            };
+            
+            _context.units.Add(addUnits);
+            await _context.SaveChangesAsync();
+            
             foreach (var file in data.filePath)
             {
                 if (file == null || file.Length == 0) throw new ArgumentNullException("File is null or empty");
@@ -135,22 +153,16 @@ public class LandLordService :ILandLordService
                     await file.CopyToAsync(fileStream);
                 }
                 
-                var addUnits = new unit
+                var photoEntry = new unit_photo
                 {
-                    building_id = data.building_id,
-                    unit_number = data.unit_number,
-                    status = data.status,
-                    rent_amount = data.rent_amount,
-                    description = data.description,
-                    square_feet = data.square_feet,
-                    bedrooms = data.bedrooms,
-                    bathrooms = data.bathrooms,
-                    filePath = originalPath,
-                    fileName = file.FileName,
+                    unit_id = addUnits.id,
+                    photo_path = originalPath,
+                    original_name = file.FileName,
+                    category = "General",
                     created_at = DateTime.UtcNow,
                     updated_at = DateTime.UtcNow
                 };
-                await _context.units.AddAsync(addUnits);
+                _context.unit_photos.Add(photoEntry);
             }
         
             await _context.SaveChangesAsync();
