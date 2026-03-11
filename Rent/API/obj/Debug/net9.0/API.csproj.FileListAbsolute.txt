@@ -246,3 +246,4 @@ D:\C#\Home-Rent\Rent\API\obj\Debug\net9.0\ref\API.dll
 D:\C#\Home-Rent\Rent\API\bin\Debug\net9.0\Microsoft.Bcl.Cryptography.dll
 D:\C#\Home-Rent\Rent\API\bin\Debug\net9.0\System.Security.Cryptography.Pkcs.dll
 D:\C#\Home-Rent\Rent\API\bin\Debug\net9.0\runtimes\win\lib\net9.0\System.Security.Cryptography.Pkcs.dll
+D:\C#\Home-Rent\Rent\API\bin\Debug\net9.0\Dapper.dll

@@ -3,6 +3,8 @@ using Data.Dtos;
 using Data.Models;
 using Microsoft.EntityFrameworkCore;
 using Services.Interfaces;
+using Dapper;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Services.Implementations;
 
@@ -176,6 +178,45 @@ public class LandLordService :ILandLordService
             };
         }
         catch(Exception e)
+        {
+            return new CommonResponseDto
+            {
+                Status = "error",
+                Message = $"An error occurred: {e.Message}",
+                Data = null
+            };
+        }
+    }
+
+    public async Task<CommonResponseDto> UpdatePhotoService(long UserID, long unitID, long photoID)
+    {
+        
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            var connection = _context.Database.GetDbConnection();
+
+            var parameters = new
+            {
+                UserID = UserID.ToString(),
+                unitID = unitID.ToString(),
+            };
+            int count = await connection.ExecuteScalarAsync<int>(
+                "dbo.UserUnitValidation",
+                parameters,
+                commandType: System.Data.CommandType.StoredProcedure,
+                transaction: transaction.GetDbTransaction()
+            );
+            if (count == 0)
+            {
+                return new CommonResponseDto { Status = "fail", Message = "No permission" };
+            }
+            
+            
+            
+            return new CommonResponseDto { Status = "fail", Message = "No permission" };
+        }
+        catch (Exception e)
         {
             return new CommonResponseDto
             {

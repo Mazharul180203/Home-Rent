@@ -76,5 +76,26 @@ public class LandLordController : ControllerBase
                return await getResponse("","fail",  e.Message );
           }
      }
+
+     [HttpPost("updated/photo/{unitID}/{photoID}")]
+
+     public async Task<IActionResult> UpdatePhoto(long unitID, long photoID)
+     {
+          try
+          {
+               var userIDClaims = User.FindFirst("UserId")?.Value;
+               if (string.IsNullOrEmpty(userIDClaims) || !long.TryParse(userIDClaims, out var userId))
+               {
+                    return await getResponse("", "fail", "Invalid UserID");
+               }
+               long UserID = long.Parse(userIDClaims);
+               CommonResponseDto response = await _service.UpdatePhotoService(UserID,unitID,photoID);
+               return await getResponse(response.Data, response.Status, response.Message);
+          }
+          catch (Exception e)
+          {
+               return await getResponse("","fail",  e.Message );
+          }
+     }
      
 }
