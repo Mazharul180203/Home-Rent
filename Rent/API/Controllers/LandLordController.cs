@@ -79,7 +79,7 @@ public class LandLordController : ControllerBase
 
      [HttpPost("updated/photo/{unitID}/{photoID}")]
 
-     public async Task<IActionResult> UpdatePhoto(long unitID, long photoID)
+     public async Task<IActionResult> UpdatePhoto(long unitID, long photoID, IFormFile photo) 
      {
           try
           {
@@ -89,7 +89,7 @@ public class LandLordController : ControllerBase
                     return await getResponse("", "fail", "Invalid UserID");
                }
                long UserID = long.Parse(userIDClaims);
-               CommonResponseDto response = await _service.UpdatePhotoService(UserID,unitID,photoID);
+               CommonResponseDto response = await _service.UpdatePhotoService(UserID,unitID,photoID, photo);
                return await getResponse(response.Data, response.Status, response.Message);
           }
           catch (Exception e)

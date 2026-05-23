@@ -4,6 +4,7 @@ using Data.Models;
 using Microsoft.EntityFrameworkCore;
 using Services.Interfaces;
 using Dapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Services.Implementations;
@@ -188,7 +189,7 @@ public class LandLordService :ILandLordService
         }
     }
 
-    public async Task<CommonResponseDto> UpdatePhotoService(long UserID, long unitID, long photoID)
+    public async Task<CommonResponseDto> UpdatePhotoService(long UserID, long unitID, long photoID, IFormFile photo)
     {
         
         using var transaction = await _context.Database.BeginTransactionAsync();
@@ -211,6 +212,8 @@ public class LandLordService :ILandLordService
             {
                 return new CommonResponseDto { Status = "fail", Message = "No permission" };
             }
+            
+            
             
             
             
