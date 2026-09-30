@@ -1,0 +1,556 @@
+﻿
+
+CREATE TABLE lookup_types (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    category NVARCHAR(50) NOT NULL,
+    value NVARCHAR(50) NOT NULL,
+    is_active BIT DEFAULT 1,
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE(),
+    CONSTRAINT UK_lookup_types UNIQUE (category, value)
+);
+CREATE INDEX idx_lookup_category ON lookup_types(category);
+GO
+
+-- 2. users (Landlords, tenants, vendors, etc.)
+CREATE TABLE users (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY, -- Clustered index created here
+    username NVARCHAR(50) UNIQUE NOT NULL,
+    email NVARCHAR(100) UNIQUE NOT NULL,
+    password_hash NVARCHAR(255) NOT NULL, -- Use Always Encrypted in prod
+    role NVARCHAR(20) NOT NULL DEFAULT 'tenant', -- Validate in app (e.g., tenant, landlord, admin, vendor)
+    nid NVARCHAR(20) UNIQUE, -- Encrypt in prod
+    full_name NVARCHAR(100) NULL,
+    phone NVARCHAR(15) NULL,
+    address NVARCHAR(MAX) NULL,
+    preferred_language NVARCHAR(20) DEFAULT 'bengali', -- Validate in app
+    screening_score DECIMAL(5,2) NULL,
+    background_check NVARCHAR(MAX) NULL CHECK (ISJSON(background_check) = 1), -- e.g., {"credit_score": 750}
+    building_id BIGINT NULL,
+    unit_id BIGINT NULL,
+    deleted_at DATETIME2 NULL,
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE()
+);
+CREATE NONCLUSTERED INDEX idx_users_building_id ON users(building_id); -- Changed to NONCLUSTERED
+CREATE NONCLUSTERED INDEX idx_users_role ON users(role);
+GO
+
+-- 3. properties (Buildings)
+CREATE TABLE properties (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    owner_id BIGINT NOT NULL,
+    name NVARCHAR(100) NOT NULL,
+    address NVARCHAR(MAX) NOT NULL,
+    type NVARCHAR(20) NOT NULL, -- Validate in app (e.g., apartment, house)
+    units_count INT DEFAULT 0 CHECK (units_count >= 0),
+    location_geo GEOGRAPHY NULL,
+    amenities NVARCHAR(MAX) NULL CHECK (ISJSON(amenities) = 1), -- e.g., {"gym": true}
+    deleted_at DATETIME2 NULL,
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE()
+) WITH (DATA_COMPRESSION = PAGE);
+ALTER TABLE properties ADD CONSTRAINT FK_properties_owner FOREIGN KEY (owner_id) REFERENCES users(id);
+ALTER TABLE users ADD CONSTRAINT FK_users_building FOREIGN KEY (building_id) REFERENCES properties(id);
+CREATE INDEX idx_properties_owner_id ON properties(owner_id);
+GO
+
+-- 4. units (Rental units)
+CREATE TABLE units (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY, -- Clustered index created here
+    building_id BIGINT NOT NULL,
+    unit_number NVARCHAR(20) NOT NULL,
+    status NVARCHAR(20) DEFAULT 'vacant', -- Validate in app (e.g., vacant, occupied)
+    rent_amount DECIMAL(10,2) NULL CHECK (rent_amount > 0 OR rent_amount IS NULL),
+    description NVARCHAR(MAX) NULL,
+    square_feet INT NULL,
+    bedrooms INT NULL,
+    bathrooms INT NULL,
+    deleted_at DATETIME2 NULL,
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE()
+);
+ALTER TABLE units ADD CONSTRAINT FK_units_building FOREIGN KEY (building_id) REFERENCES properties(id);
+ALTER TABLE users ADD CONSTRAINT FK_users_unit FOREIGN KEY (unit_id) REFERENCES units(id);
+CREATE NONCLUSTERED INDEX idx_units_building_id ON units(building_id); -- Changed to NONCLUSTERED
+CREATE NONCLUSTERED INDEX idx_units_status ON units(status);
+GO
+
+--4.1 unitPhoto (store all photo)
+CREATE TABLE unit_photos (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    unit_id BIGINT NOT NULL,           -- Foreign Key to units table
+    photo_path NVARCHAR(MAX) NOT NULL, -- Full physical path or URL
+    original_name NVARCHAR(255) NULL,  -- Original name of the file
+    category NVARCHAR(50) NULL,        -- e.g., 'Washroom', 'Bedroom', 'Kitchen'
+    is_main BIT DEFAULT 0,             -- To mark which photo is the cover image
+    created_at DATETIME2 DEFAULT GETDATE(),
+    
+    -- Constraint to ensure the photo belongs to a valid unit
+    CONSTRAINT FK_unit_photos_units FOREIGN KEY (unit_id) 
+        REFERENCES units(id) ON DELETE CASCADE
+);
+
+-- Index for faster photo retrieval when viewing a unit
+CREATE NONCLUSTERED INDEX idx_unit_photos_unit_id ON unit_photos(unit_id);
+-- 5. tenant_onboarding (Onboarding steps)
+CREATE TABLE tenant_onboarding (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    step NVARCHAR(50) NOT NULL, -- Validate in app (e.g., document_submission, lease_signed)
+    status NVARCHAR(20) DEFAULT 'pending', -- Validate in app
+    details NVARCHAR(MAX) NULL CHECK (ISJSON(details) = 1), -- e.g., {"document": "nid.pdf"}
+    completed_at DATETIME2 NULL,
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE()
+);
+ALTER TABLE tenant_onboarding ADD CONSTRAINT FK_onboarding_user FOREIGN KEY (user_id) REFERENCES users(id);
+CREATE INDEX idx_onboarding_user_id ON tenant_onboarding(user_id);
+GO
+
+-- 6. tenant_feedback (Tenant satisfaction)
+CREATE TABLE tenant_feedback (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    building_id BIGINT NOT NULL,
+    rating INT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    comments NVARCHAR(MAX) NULL,
+    submitted_at DATETIME2 DEFAULT GETDATE(),
+    deleted_at DATETIME2 NULL,
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE()
+);
+ALTER TABLE tenant_feedback ADD CONSTRAINT FK_feedback_user FOREIGN KEY (user_id) REFERENCES users(id);
+ALTER TABLE tenant_feedback ADD CONSTRAINT FK_feedback_building FOREIGN KEY (building_id) REFERENCES properties(id);
+CREATE INDEX idx_feedback_building_id ON tenant_feedback(building_id);
+GO
+
+-- 7. tenant_preferences (Personalized settings)
+CREATE TABLE tenant_preferences (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    preferences NVARCHAR(MAX) NOT NULL CHECK (ISJSON(preferences) = 1), -- e.g., {"theme": "dark"}
+    deleted_at DATETIME2 NULL,
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE()
+);
+ALTER TABLE tenant_preferences ADD CONSTRAINT FK_preferences_user FOREIGN KEY (user_id) REFERENCES users(id);
+CREATE INDEX idx_preferences_user_id ON tenant_preferences(user_id);
+GO
+
+-- 8. vendors (Vendor details)
+CREATE TABLE vendors (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    expertise NVARCHAR(50) NOT NULL, -- Validate in app (e.g., plumbing, electrical)
+    rating DECIMAL(3,2) NULL CHECK (rating BETWEEN 0 AND 5),
+    availability NVARCHAR(20) DEFAULT 'available', -- Validate in app
+    details NVARCHAR(MAX) NULL CHECK (ISJSON(details) = 1), -- e.g., {"certifications": ["xyz"]}
+    deleted_at DATETIME2 NULL,
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE()
+);
+ALTER TABLE vendors ADD CONSTRAINT FK_vendors_user FOREIGN KEY (user_id) REFERENCES users(id);
+CREATE INDEX idx_vendors_user_id ON vendors(user_id);
+GO
+
+-- 9. contract_templates (Lease templates)
+CREATE TABLE contract_templates (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    name NVARCHAR(100) NOT NULL,
+    content NVARCHAR(MAX) NOT NULL,
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE()
+);
+GO
+
+-- 10. leases (Lease agreements)
+CREATE TABLE leases (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    tenant_id BIGINT NOT NULL,
+    unit_id BIGINT NOT NULL,
+    contract_template_id BIGINT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NULL,
+    rent_amount DECIMAL(10,2) NOT NULL CHECK (rent_amount > 0),
+    deposit DECIMAL(10,2) NULL CHECK (deposit > 0 OR deposit IS NULL),
+    terms NVARCHAR(MAX) NOT NULL, -- Lease content
+    e_signature NVARCHAR(255) NULL, -- e.g., DocuSign ID
+    status NVARCHAR(20) DEFAULT 'active', -- Validate in app (e.g., active, expired)
+    deleted_at DATETIME2 NULL,
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE(),
+    SysStartTime DATETIME2 GENERATED ALWAYS AS ROW START HIDDEN,
+    SysEndTime DATETIME2 GENERATED ALWAYS AS ROW END HIDDEN,
+    PERIOD FOR SYSTEM_TIME (SysStartTime, SysEndTime)
+) WITH (SYSTEM_VERSIONING = ON (HISTORY_TABLE = dbo.leases_history));
+ALTER TABLE leases ADD CONSTRAINT FK_leases_tenant FOREIGN KEY (tenant_id) REFERENCES users(id);
+ALTER TABLE leases ADD CONSTRAINT FK_leases_unit FOREIGN KEY (unit_id) REFERENCES units(id);
+ALTER TABLE leases ADD CONSTRAINT FK_leases_template FOREIGN KEY (contract_template_id) REFERENCES contract_templates(id);
+CREATE INDEX idx_leases_unit_id ON leases(unit_id);
+CREATE INDEX idx_leases_status ON leases(status);
+GO
+
+-- 11. payments (Payment tracking)
+CREATE TABLE payments (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    lease_id BIGINT NOT NULL,
+    amount DECIMAL(10,2) NOT NULL CHECK (amount > 0),
+    partial_amount DECIMAL(10,2) NULL CHECK (partial_amount > 0 OR partial_amount IS NULL),
+    late_fee DECIMAL(10,2) NULL CHECK (late_fee >= 0 OR late_fee IS NULL),
+    due_date DATE NOT NULL,
+    paid_date DATE NULL,
+    method NVARCHAR(20) NOT NULL, -- Validate in app (e.g., bkash, nagad)
+    transaction_id NVARCHAR(50) NULL, -- Encrypt in prod
+    status NVARCHAR(20) DEFAULT 'pending', -- Validate in app (e.g., pending, paid)
+    receipt_pdf NVARCHAR(255) NULL,
+    deleted_at DATETIME2 NULL,
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE(),
+    SysStartTime DATETIME2 GENERATED ALWAYS AS ROW START HIDDEN,
+    SysEndTime DATETIME2 GENERATED ALWAYS AS ROW END HIDDEN,
+    PERIOD FOR SYSTEM_TIME (SysStartTime, SysEndTime)
+) WITH (SYSTEM_VERSIONING = ON (HISTORY_TABLE = dbo.payments_history));
+ALTER TABLE payments ADD CONSTRAINT FK_payments_lease FOREIGN KEY (lease_id) REFERENCES leases(id);
+CREATE INDEX idx_payments_lease_id ON payments(lease_id);
+CREATE INDEX idx_payments_due_date ON payments(due_date) WITH (DATA_COMPRESSION = ROW);
+GO
+
+-- 12. utilities (Utility bills)
+CREATE TABLE utilities (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    lease_id BIGINT NULL,
+    unit_id BIGINT NOT NULL,
+    type NVARCHAR(20) NOT NULL, -- Validate in app (e.g., electricity, water)
+    amount DECIMAL(10,2) NOT NULL CHECK (amount > 0),
+    period_start DATE NOT NULL,
+    period_end DATE NOT NULL,
+    meter_reading DECIMAL(10,2) NULL,
+    status NVARCHAR(20) DEFAULT 'billed', -- Validate in app
+    deleted_at DATETIME2 NULL,
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE()
+);
+ALTER TABLE utilities ADD CONSTRAINT FK_utilities_lease FOREIGN KEY (lease_id) REFERENCES leases(id);
+ALTER TABLE utilities ADD CONSTRAINT FK_utilities_unit FOREIGN KEY (unit_id) REFERENCES units(id);
+CREATE INDEX idx_utilities_unit_id ON utilities(unit_id);
+GO
+
+-- 13. maintenance_requests (Tenant issues)
+CREATE TABLE maintenance_requests (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    tenant_id BIGINT NOT NULL,
+    unit_id BIGINT NOT NULL,
+    description NVARCHAR(MAX) NOT NULL,
+    priority NVARCHAR(20) DEFAULT 'medium', -- Validate in app
+    status NVARCHAR(20) DEFAULT 'open', -- Validate in app
+    approved_by BIGINT NULL,
+    approval_date DATETIME2 NULL,
+    attachments NVARCHAR(MAX) NULL CHECK (ISJSON(attachments) = 1),
+    deleted_at DATETIME2 NULL,
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE()
+);
+ALTER TABLE maintenance_requests ADD CONSTRAINT FK_maintenance_tenant FOREIGN KEY (tenant_id) REFERENCES users(id);
+ALTER TABLE maintenance_requests ADD CONSTRAINT FK_maintenance_unit FOREIGN KEY (unit_id) REFERENCES units(id);
+ALTER TABLE maintenance_requests ADD CONSTRAINT FK_maintenance_approver FOREIGN KEY (approved_by) REFERENCES users(id);
+CREATE INDEX idx_maintenance_unit_id ON maintenance_requests(unit_id);
+GO
+
+-- 14. work_orders (Vendor tasks)
+CREATE TABLE work_orders (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    request_id BIGINT NOT NULL,
+    vendor_id BIGINT NULL,
+    cost DECIMAL(10,2) NULL CHECK (cost > 0 OR cost IS NULL),
+    scheduled_date DATE NULL,
+    completion_date DATE NULL,
+    notes NVARCHAR(MAX) NULL,
+    deleted_at DATETIME2 NULL,
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE()
+);
+ALTER TABLE work_orders ADD CONSTRAINT FK_work_orders_request FOREIGN KEY (request_id) REFERENCES maintenance_requests(id);
+ALTER TABLE work_orders ADD CONSTRAINT FK_work_orders_vendor FOREIGN KEY (vendor_id) REFERENCES users(id);
+CREATE INDEX idx_work_orders_request_id ON work_orders(request_id);
+GO
+
+-- 15. maintenance_schedules (Recurring maintenance)
+CREATE TABLE maintenance_schedules (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    unit_id BIGINT NOT NULL,
+    type NVARCHAR(50) NOT NULL, -- Validate in app (e.g., hvac_check)
+    frequency NVARCHAR(20) NOT NULL, -- Validate in app (e.g., monthly)
+    next_due_date DATE NOT NULL,
+    last_completed_date DATE NULL,
+    vendor_id BIGINT NULL,
+    deleted_at DATETIME2 NULL,
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE()
+);
+ALTER TABLE maintenance_schedules ADD CONSTRAINT FK_schedules_unit FOREIGN KEY (unit_id) REFERENCES units(id);
+ALTER TABLE maintenance_schedules ADD CONSTRAINT FK_schedules_vendor FOREIGN KEY (vendor_id) REFERENCES users(id);
+CREATE INDEX idx_schedules_unit_id ON maintenance_schedules(unit_id);
+GO
+
+-- 16. maintenance_costs (Expense tracking)
+CREATE TABLE maintenance_costs (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    work_order_id BIGINT NOT NULL,
+    cost_type NVARCHAR(50) NOT NULL, -- Validate in app (e.g., labor, materials)
+    amount DECIMAL(10,2) NOT NULL CHECK (amount > 0),
+    description NVARCHAR(MAX) NULL,
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE()
+);
+ALTER TABLE maintenance_costs ADD CONSTRAINT FK_costs_work_order FOREIGN KEY (work_order_id) REFERENCES work_orders(id);
+CREATE INDEX idx_costs_work_order_id ON maintenance_costs(work_order_id);
+GO
+
+-- 17. communications (Messages)
+CREATE TABLE communications (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    building_id BIGINT NOT NULL,
+    sender_id BIGINT NOT NULL,
+    recipient_id BIGINT NOT NULL,
+    type NVARCHAR(20) NOT NULL, -- Validate in app (e.g., email, sms)
+    content NVARCHAR(MAX) NOT NULL,
+    sent_at DATETIME2 DEFAULT GETDATE(),
+    read_at DATETIME2 NULL,
+    deleted_at DATETIME2 NULL,
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE()
+);
+ALTER TABLE communications ADD CONSTRAINT FK_communications_building FOREIGN KEY (building_id) REFERENCES properties(id);
+ALTER TABLE communications ADD CONSTRAINT FK_communications_sender FOREIGN KEY (sender_id) REFERENCES users(id);
+ALTER TABLE communications ADD CONSTRAINT FK_communications_recipient FOREIGN KEY (recipient_id) REFERENCES users(id);
+CREATE INDEX idx_communications_building_id ON communications(building_id);
+GO
+
+-- 18. communication_templates (Message templates)
+CREATE TABLE communication_templates (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    name NVARCHAR(100) NOT NULL,
+    type NVARCHAR(20) NOT NULL, -- Validate in app
+    content NVARCHAR(MAX) NOT NULL,
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE()
+);
+GO
+
+-- 19. notifications (User preferences)
+CREATE TABLE notifications (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    type NVARCHAR(50) NOT NULL, -- Validate in app (e.g., payment_reminder)
+    channel NVARCHAR(20) NOT NULL, -- Validate in app (e.g., email, sms)
+    enabled BIT DEFAULT 1,
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE()
+);
+ALTER TABLE notifications ADD CONSTRAINT FK_notifications_user FOREIGN KEY (user_id) REFERENCES users(id);
+CREATE INDEX idx_notifications_user_id ON notifications(user_id);
+GO
+
+-- 20. visitor_passes (Secure visitor management)
+CREATE TABLE visitor_passes (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    tenant_id BIGINT NOT NULL,
+    visitor_name NVARCHAR(100) NOT NULL,
+    visit_date DATE NOT NULL,
+    qr_code NVARCHAR(255) NULL,
+    status NVARCHAR(20) DEFAULT 'active', -- Validate in app
+    deleted_at DATETIME2 NULL,
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE()
+);
+ALTER TABLE visitor_passes ADD CONSTRAINT FK_visitors_tenant FOREIGN KEY (tenant_id) REFERENCES users(id);
+CREATE INDEX idx_visitors_tenant_id ON visitor_passes(tenant_id);
+GO
+
+-- 21. polls (Tenant engagement)
+CREATE TABLE polls (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    building_id BIGINT NOT NULL,
+    question NVARCHAR(MAX) NOT NULL,
+    options NVARCHAR(MAX) NOT NULL CHECK (ISJSON(options) = 1), -- e.g., ["option1", "option2"]
+    start_date DATE NOT NULL,
+    end_date DATE NULL,
+    votes NVARCHAR(MAX) NULL CHECK (ISJSON(votes) = 1), -- e.g., {"option1": 5}
+    deleted_at DATETIME2 NULL,
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE()
+);
+ALTER TABLE polls ADD CONSTRAINT FK_polls_building FOREIGN KEY (building_id) REFERENCES properties(id);
+CREATE INDEX idx_polls_building_id ON polls(building_id);
+GO
+
+-- 22. rewards (Gamification for tenants)
+CREATE TABLE rewards (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    tenant_id BIGINT NOT NULL,
+    points INT NOT NULL DEFAULT 0 CHECK (points >= 0),
+    action_type NVARCHAR(50) NOT NULL, -- Validate in app (e.g., timely_payment)
+    reward_type NVARCHAR(50) NULL, -- Validate in app (e.g., discount)
+    redeemed_at DATETIME2 NULL,
+    details NVARCHAR(MAX) NULL CHECK (ISJSON(details) = 1), -- e.g., {"description": "Rent discount"}
+    deleted_at DATETIME2 NULL,
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE()
+);
+ALTER TABLE rewards ADD CONSTRAINT FK_rewards_tenant FOREIGN KEY (tenant_id) REFERENCES users(id);
+CREATE INDEX idx_rewards_tenant_id ON rewards(tenant_id);
+GO
+
+-- 23. scheduled_tasks (Automated tasks)
+CREATE TABLE scheduled_tasks (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    task_type NVARCHAR(50) NOT NULL, -- Validate in app (e.g., payment_reminder)
+    entity_type NVARCHAR(50) NOT NULL, -- e.g., lease, property
+    entity_id BIGINT NOT NULL,
+    frequency NVARCHAR(20) NOT NULL, -- Validate in app (e.g., daily)
+    next_execution DATETIME2 NOT NULL,
+    last_execution DATETIME2 NULL,
+    status NVARCHAR(20) DEFAULT 'pending', -- Validate in app
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE()
+);
+CREATE INDEX idx_tasks_entity ON scheduled_tasks(entity_type, entity_id);
+GO
+
+-- 24. subscriptions (SaaS plans)
+CREATE TABLE subscriptions (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    plan_type NVARCHAR(50) NOT NULL, -- Validate in app (e.g., free, premium)
+    start_date DATE NOT NULL,
+    end_date DATE NULL,
+    status NVARCHAR(20) DEFAULT 'active', -- Validate in app
+    details NVARCHAR(MAX) NULL CHECK (ISJSON(details) = 1), -- e.g., {"features": ["analytics"]}
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE()
+);
+ALTER TABLE subscriptions ADD CONSTRAINT FK_subscriptions_user FOREIGN KEY (user_id) REFERENCES users(id);
+CREATE INDEX idx_subscriptions_user_id ON subscriptions(user_id);
+GO
+
+-- 25. billing_transactions (Subscription payments)
+CREATE TABLE billing_transactions (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    subscription_id BIGINT NOT NULL,
+    amount DECIMAL(10,2) NOT NULL CHECK (amount > 0),
+    transaction_id NVARCHAR(50) NULL, -- Encrypt in prod
+    status NVARCHAR(20) DEFAULT 'pending', -- Validate in app
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE()
+);
+ALTER TABLE billing_transactions ADD CONSTRAINT FK_billing_subscription FOREIGN KEY (subscription_id) REFERENCES subscriptions(id);
+CREATE INDEX idx_billing_subscription_id ON billing_transactions(subscription_id);
+GO
+
+-- 26. data_consents (PDPO compliance)
+CREATE TABLE data_consents (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    consent_type NVARCHAR(50) NOT NULL, -- e.g., data_processing
+    granted_at DATETIME2 DEFAULT GETDATE(),
+    revoked_at DATETIME2 NULL,
+    details NVARCHAR(MAX) NULL CHECK (ISJSON(details) = 1),
+    deleted_at DATETIME2 NULL,
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE()
+);
+ALTER TABLE data_consents ADD CONSTRAINT FK_consents_user FOREIGN KEY (user_id) REFERENCES users(id);
+CREATE INDEX idx_consents_user_id ON data_consents(user_id);
+GO
+
+-- 27. data_requests (PDPO requests)
+CREATE TABLE data_requests (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    request_type NVARCHAR(50) NOT NULL, -- Validate in app (e.g., erasure, access)
+    status NVARCHAR(20) DEFAULT 'pending', -- Validate in app
+    submitted_at DATETIME2 DEFAULT GETDATE(),
+    resolved_at DATETIME2 NULL,
+    details NVARCHAR(MAX) NULL CHECK (ISJSON(details) = 1),
+    deleted_at DATETIME2 NULL,
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE()
+);
+ALTER TABLE data_requests ADD CONSTRAINT FK_requests_user FOREIGN KEY (user_id) REFERENCES users(id);
+CREATE INDEX idx_requests_user_id ON data_requests(user_id);
+GO
+
+-- 28. access_logs (Audit trail)
+CREATE TABLE access_logs (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    action NVARCHAR(50) NOT NULL,
+    entity_type NVARCHAR(50) NOT NULL,
+    entity_id BIGINT NULL,
+    timestamp DATETIME2 DEFAULT GETDATE(),
+    ip_address NVARCHAR(45) NULL,
+    details NVARCHAR(MAX) NULL CHECK (ISJSON(details) = 1),
+    created_at DATETIME2 DEFAULT GETDATE()
+);
+ALTER TABLE access_logs ADD CONSTRAINT FK_access_user FOREIGN KEY (user_id) REFERENCES users(id);
+CREATE INDEX idx_access_user_id ON access_logs(user_id);
+GO
+
+--29. token table
+CREATE TABLE RefreshTokens (
+    RefreshTokenId BIGINT IDENTITY(1,1) PRIMARY KEY,  -- PK for this table
+    UserId BIGINT NOT NULL,                            -- FK to users.id
+    TokenHash NVARCHAR(255) NOT NULL,                 -- Hashed refresh token
+    ExpiresAt DATETIME2 NOT NULL,                     -- Expiry timestamp
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),-- Creation timestamp
+    RevokedAt DATETIME2 NULL,                         -- Revoked timestamp
+    ReplacedByTokenHash NVARCHAR(255) NULL,          -- New token hash after rotation
+
+    CONSTRAINT FK_RefreshTokens_Users FOREIGN KEY (UserId)
+        REFERENCES users(id)
+);
+
+-- Trigger for units_count
+CREATE TRIGGER tr_units_count
+ON units
+AFTER INSERT, DELETE
+AS
+BEGIN
+    UPDATE p
+    SET units_count = (SELECT COUNT(*) FROM units u WHERE u.building_id = p.id AND u.deleted_at IS NULL)
+    FROM properties p
+    WHERE p.id IN (SELECT building_id FROM inserted UNION SELECT building_id FROM deleted);
+END;
+GO
+
+-- Audit trigger for access_logs
+CREATE TRIGGER tr_access_log
+ON users
+AFTER INSERT, UPDATE, DELETE
+AS
+BEGIN
+    SET NOCOUNT ON;
+    INSERT INTO access_logs (user_id, action, entity_type, entity_id, details, ip_address)
+    SELECT i.id, 'INSERT', 'users', i.id, '{"operation": "user_create"}', CURRENT_REQUEST_ID()
+    FROM inserted i
+    UNION ALL
+    SELECT d.id, 'DELETE', 'users', d.id, '{"operation": "user_delete"}', CURRENT_REQUEST_ID()
+    FROM deleted d;
+END;
+GO
+
+-- View for financial summary
+CREATE VIEW vw_financial_summary AS
+SELECT 
+    p.id AS property_id,
+    p.name AS property_name,
+    COUNT(u.id) AS total_units,
+    SUM(CASE WHEN u.status = 'occupied' THEN 1 ELSE 0 END) AS occupied_units,
+    SUM(pay.amount) AS total_revenue
+FROM properties p
+LEFT JOIN units u ON u.building_id = p.id AND u.deleted_at IS NULL
+LEFT JOIN leases l ON l.unit_id = u.id AND l.deleted_at IS NULL
+LEFT JOIN payments pay ON pay.lease_id = l.id AND pay.status = 'paid' AND pay.deleted_at IS NULL
+GROUP BY p.id, p.name;
+GO
